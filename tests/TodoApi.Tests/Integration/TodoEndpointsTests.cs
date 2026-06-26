@@ -15,6 +15,14 @@ public class TodoEndpointsTests(TodoApiFactory factory) : IClassFixture<TodoApiF
     private readonly TodoApiFactory _factory = factory;
     private readonly HttpClient _client = factory.CreateClient();
 
+    private async Task ResetDatabaseAsync()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<TodoDb>();
+        db.Todos.RemoveRange(db.Todos);
+        await db.SaveChangesAsync();
+    }
+
     [Fact]
     public async Task Post_then_Get_returns_created_todo()
     {
@@ -133,8 +141,7 @@ public class TodoEndpointsTests(TodoApiFactory factory) : IClassFixture<TodoApiF
 
         var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
         problem.Should().NotBeNull();
-        problem!.Title.Should().Be("Invalid due date");
-        problem.Status.Should().Be((int)HttpStatusCode.BadRequest);
+        problem!.Status.Should().Be((int)HttpStatusCode.BadRequest);
     }
 
     [Fact]
@@ -160,8 +167,129 @@ public class TodoEndpointsTests(TodoApiFactory factory) : IClassFixture<TodoApiF
 
         var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
         problem.Should().NotBeNull();
-        problem!.Title.Should().Be("Invalid due date");
-        problem.Status.Should().Be((int)HttpStatusCode.BadRequest);
+        problem!.Status.Should().Be((int)HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task Post_without_name_returns_400_validation_problem_details()
+    {
+        var response = await _client.PostAsJsonAsync("/todoitems", new
+        {
+            isComplete = false,
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.Content.Headers.ContentType?.MediaType.Should().Be("application/problem+json");
+
+        var problem = await response.Content.ReadFromJsonAsync<ValidationProblemDetails>();
+        problem.Should().NotBeNull();
+        problem!.Errors.Should().ContainKey("name");
+    }
+
+    [Fact]
+    public async Task Post_with_name_longer_than_200_returns_400_validation_problem_details()
+    {
+        var response = await _client.PostAsJsonAsync("/todoitems", new TodoItemDto
+        {
+            Name = new string('x', 201),
+            IsComplete = false,
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.Content.Headers.ContentType?.MediaType.Should().Be("application/problem+json");
+
+        var problem = await response.Content.ReadFromJsonAsync<ValidationProblemDetails>();
+        problem.Should().NotBeNull();
+        problem!.Errors.Should().ContainKey("name");
+    }
+
+    [Fact]
+    public async Task Get_with_pagination_returns_expected_pages_and_total_count_header()
+    {
+        await ResetDatabaseAsync();
+        for (var i = 0; i < 25; i++)
+        {
+            await _client.PostAsJsonAsync("/todoitems", new TodoItemDto
+            {
+                Name = $"page-item-{i}",
+                IsComplete = false,
+            });
+        }
+
+        var page1Response = await _client.GetAsync("/todoitems?page=1&pageSize=20");
+        page1Response.StatusCode.Should().Be(HttpStatusCode.OK);
+        page1Response.Headers.TryGetValues("X-Total-Count", out var page1Totals).Should().BeTrue();
+        page1Totals!.Single().Should().Be("25");
+        var page1 = await page1Response.Content.ReadFromJsonAsync<List<TodoItemDto>>();
+        page1.Should().NotBeNull();
+        page1!.Should().HaveCount(20);
+
+        var page2Response = await _client.GetAsync("/todoitems?page=2&pageSize=20");
+        page2Response.StatusCode.Should().Be(HttpStatusCode.OK);
+        page2Response.Headers.TryGetValues("X-Total-Count", out var page2Totals).Should().BeTrue();
+        page2Totals!.Single().Should().Be("25");
+        var page2 = await page2Response.Content.ReadFromJsonAsync<List<TodoItemDto>>();
+        page2.Should().NotBeNull();
+        page2!.Should().HaveCount(5);
+    }
+
+    [Fact]
+    public async Task Get_without_pagination_parameters_applies_defaults()
+    {
+        await ResetDatabaseAsync();
+        for (var i = 0; i < 25; i++)
+        {
+            await _client.PostAsJsonAsync("/todoitems", new TodoItemDto
+            {
+                Name = $"default-page-item-{i}",
+                IsComplete = false,
+            });
+        }
+
+        var response = await _client.GetAsync("/todoitems");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.Headers.TryGetValues("X-Total-Count", out var totals).Should().BeTrue();
+        totals!.Single().Should().Be("25");
+
+        var items = await response.Content.ReadFromJsonAsync<List<TodoItemDto>>();
+        items.Should().NotBeNull();
+        items!.Should().HaveCount(20);
+    }
+
+    [Fact]
+    public async Task Get_with_page_size_above_limit_is_clamped_to_100()
+    {
+        await ResetDatabaseAsync();
+        for (var i = 0; i < 120; i++)
+        {
+            await _client.PostAsJsonAsync("/todoitems", new TodoItemDto
+            {
+                Name = $"clamped-page-item-{i}",
+                IsComplete = false,
+            });
+        }
+
+        var response = await _client.GetAsync("/todoitems?page=1&pageSize=1000");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.Headers.TryGetValues("X-Total-Count", out var totals).Should().BeTrue();
+        totals!.Single().Should().Be("120");
+
+        var items = await response.Content.ReadFromJsonAsync<List<TodoItemDto>>();
+        items.Should().NotBeNull();
+        items!.Should().HaveCount(100);
+    }
+
+    [Fact]
+    public async Task Get_with_invalid_page_returns_400_validation_problem_details()
+    {
+        var response = await _client.GetAsync("/todoitems?page=0&pageSize=20");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.Content.Headers.ContentType?.MediaType.Should().Be("application/problem+json");
+
+        var problem = await response.Content.ReadFromJsonAsync<ValidationProblemDetails>();
+        problem.Should().NotBeNull();
+        problem!.Errors.Should().ContainKey("page");
     }
 
     [Fact]
@@ -225,6 +353,7 @@ public class TodoEndpointsTests(TodoApiFactory factory) : IClassFixture<TodoApiF
     [Fact]
     public async Task Get_with_tag_filter_is_case_insensitive()
     {
+        await ResetDatabaseAsync();
         await _client.PostAsJsonAsync("/todoitems", new TodoItemDto
         {
             Name = "tagged-work-item",
@@ -250,6 +379,7 @@ public class TodoEndpointsTests(TodoApiFactory factory) : IClassFixture<TodoApiF
     [Fact]
     public async Task Get_with_no_tag_parameter_returns_all_items()
     {
+        await ResetDatabaseAsync();
         await _client.PostAsJsonAsync("/todoitems", new TodoItemDto
         {
             Name = "all-items-a",

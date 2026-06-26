@@ -35,9 +35,11 @@ this file together with that feature's checkpoint. Capture *how* it got to green
   **(no in-depth review done yet)**
 
 ## F4 — validation & pagination
-- **Result:**
-- **Intervention:**
-- **Notes:**
+- **Result:** green 1 pass
+- **Intervention:** none
+- **Notes:** 55.4 credits
+
+  **(no in-depth review done yet)**
 
 ## F5 — clean architecture
 - **Result:**

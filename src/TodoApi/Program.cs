@@ -6,6 +6,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<TodoDb>(opt => opt.UseInMemoryDatabase("TodoList"));
 builder.Services.AddOpenApi();
+builder.Services.AddProblemDetails();
 
 var app = builder.Build();
 
@@ -15,6 +16,11 @@ if (app.Environment.IsDevelopment())
 }
 
 var todos = app.MapGroup("/todoitems");
+
+const int DefaultPage = 1;
+const int DefaultPageSize = 20;
+const int MaxPageSize = 100;
+const string TotalCountHeaderName = "X-Total-Count";
 
 static bool DueDateIsInPast(DateTimeOffset? dueDate) =>
     dueDate is { } value && value < DateTimeOffset.UtcNow;
@@ -42,8 +48,61 @@ static List<string> NormalizeTags(IEnumerable<string>? tags)
     return [.. normalizedTags];
 }
 
-todos.MapGet("/", async (string? tag, TodoDb db) =>
+static Dictionary<string, string[]> ValidateTodoInput(TodoItemDto dto)
 {
+    Dictionary<string, string[]> errors = [];
+
+    if (string.IsNullOrWhiteSpace(dto.Name))
+    {
+        errors["name"] = ["Name is required."];
+    }
+
+    if (dto.Name.Length > 200)
+    {
+        errors["name"] = ["Name must be 200 characters or fewer."];
+    }
+
+    if (DueDateIsInPast(dto.DueDate))
+    {
+        errors["dueDate"] = ["DueDate cannot be in the past."];
+    }
+
+    return errors;
+}
+
+static Dictionary<string, string[]> ValidatePagination(int page, int pageSize)
+{
+    Dictionary<string, string[]> errors = [];
+
+    if (page <= 0)
+    {
+        errors["page"] = ["Page must be greater than 0."];
+    }
+
+    if (pageSize <= 0)
+    {
+        errors["pageSize"] = ["PageSize must be greater than 0."];
+    }
+
+    return errors;
+}
+
+todos.MapGet("/", async (string? tag, int? page, int? pageSize, TodoDb db, HttpContext httpContext) =>
+{
+    var resolvedPage = page ?? DefaultPage;
+    var resolvedPageSize = pageSize ?? DefaultPageSize;
+
+    var pagingErrors = ValidatePagination(resolvedPage, resolvedPageSize);
+    if (pagingErrors.Count > 0)
+    {
+        return Results.ValidationProblem(pagingErrors);
+    }
+
+    if (resolvedPageSize > MaxPageSize)
+    {
+        resolvedPageSize = MaxPageSize;
+    }
+
     var query = db.Todos.AsQueryable();
     if (!string.IsNullOrWhiteSpace(tag))
     {
@@ -51,7 +110,18 @@ todos.MapGet("/", async (string? tag, TodoDb db) =>
         query = query.Where(todo => todo.Tags.Contains(normalizedTag));
     }
 
-    return await query.Select(t => t.ToDto()).ToListAsync();
+    var totalCount = await query.CountAsync();
+    var skip = (resolvedPage - 1) * resolvedPageSize;
+    var items = await query
+        .OrderBy(t => t.Id)
+        .Skip(skip)
+        .Take(resolvedPageSize)
+        .Select(t => t.ToDto())
+        .ToListAsync();
+
+    httpContext.Response.Headers[TotalCountHeaderName] = totalCount.ToString();
+
+    return Results.Ok(items);
 });
 
 todos.MapGet("/complete", async (TodoDb db) =>
@@ -87,12 +157,10 @@ todos.MapGet("/{id:int}", async (int id, TodoDb db) =>
 
 todos.MapPost("/", async (TodoItemDto dto, TodoDb db) =>
 {
-    if (DueDateIsInPast(dto.DueDate))
+    var validationErrors = ValidateTodoInput(dto);
+    if (validationErrors.Count > 0)
     {
-        return Results.Problem(
-            title: "Invalid due date",
-            detail: "DueDate cannot be in the past.",
-            statusCode: StatusCodes.Status400BadRequest);
+        return Results.ValidationProblem(validationErrors);
     }
 
     var todo = new TodoItem
@@ -112,12 +180,10 @@ todos.MapPut("/{id:int}", async (int id, TodoItemDto dto, TodoDb db) =>
 {
     var todo = await db.Todos.FindAsync(id);
     if (todo is null) return Results.NotFound();
-    if (DueDateIsInPast(dto.DueDate))
+    var validationErrors = ValidateTodoInput(dto);
+    if (validationErrors.Count > 0)
     {
-        return Results.Problem(
-            title: "Invalid due date",
-            detail: "DueDate cannot be in the past.",
-            statusCode: StatusCodes.Status400BadRequest);
+        return Results.ValidationProblem(validationErrors);
     }
 
     todo.Name = dto.Name;
