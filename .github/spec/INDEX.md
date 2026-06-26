@@ -8,8 +8,8 @@
 | # | Spec | Category | Prio | Summary |
 |---|------|----------|------|---------|
 | 1 | `overview.md` | domain | 1 | Purpose, scope, non-goals of the baseline |
-| 2 | `domain-model.md` | data-model | 1 | TodoItem, TodoItemDto, mapping, Secret rule |
-| 3 | `api-contracts.md` | api | 2 | Endpoints under /todoitems, status codes |
+| 2 | `domain-model.md` | data-model | 1 | TodoItem, TodoItemDto, mapping, Secret rule, priority |
+| 3 | `api-contracts.md` | api | 2 | Endpoints under /todoitems, status codes, priority filter |
 
 ## By category
 
@@ -25,6 +25,7 @@
 | `secret` | domain-model |
 | `crud` | api-contracts |
 | `efcore` | domain-model |
+| `priority` | domain-model, api-contracts |
 
 ## Feature plans (benchmark)
 

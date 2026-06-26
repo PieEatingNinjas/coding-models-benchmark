@@ -17,6 +17,21 @@ public class TodoMappingTests
         dto.Id.Should().Be(item.Id);
         dto.Name.Should().Be(item.Name);
         dto.IsComplete.Should().Be(item.IsComplete);
+        dto.Priority.Should().Be(item.Priority);
+    }
+
+    [Fact]
+    public void ToDto_defaults_priority_to_medium_when_not_set()
+    {
+        var item = new TodoItem
+        {
+            Name = "task",
+            IsComplete = false,
+        };
+
+        var dto = item.ToDto();
+
+        dto.Priority.Should().Be(TodoPriority.Medium);
     }
 
     [Fact]

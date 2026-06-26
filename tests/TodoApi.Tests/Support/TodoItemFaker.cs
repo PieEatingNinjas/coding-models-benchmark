@@ -9,11 +9,13 @@ public static class TodoItemFaker
     public static Faker<TodoItemDto> Dto() => new Faker<TodoItemDto>()
         .RuleFor(t => t.Id, _ => 0)
         .RuleFor(t => t.Name, f => $"{f.Hacker.Verb()} {f.Hacker.Noun()}")
-        .RuleFor(t => t.IsComplete, f => f.Random.Bool());
+        .RuleFor(t => t.IsComplete, f => f.Random.Bool())
+        .RuleFor(t => t.Priority, f => f.PickRandom<TodoPriority>());
 
     public static Faker<TodoItem> Entity() => new Faker<TodoItem>()
         .RuleFor(t => t.Id, _ => 0)
         .RuleFor(t => t.Name, f => $"{f.Hacker.Verb()} {f.Hacker.Noun()}")
         .RuleFor(t => t.IsComplete, f => f.Random.Bool())
+        .RuleFor(t => t.Priority, f => f.PickRandom<TodoPriority>())
         .RuleFor(t => t.Secret, f => f.Internet.Password());
 }
