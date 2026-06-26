@@ -19,6 +19,7 @@ public class TodoMappingTests
         dto.IsComplete.Should().Be(item.IsComplete);
         dto.Priority.Should().Be(item.Priority);
         dto.DueDate.Should().Be(item.DueDate);
+        dto.Tags.Should().Equal(item.Tags);
     }
 
     [Fact]
@@ -44,5 +45,12 @@ public class TodoMappingTests
     {
         new TodoItem().Priority.Should().Be(TodoPriority.Medium);
         new TodoItemDto().Priority.Should().Be(TodoPriority.Medium);
+    }
+
+    [Fact]
+    public void TodoItem_and_TodoItemDto_default_tags_to_empty_collection()
+    {
+        new TodoItem().Tags.Should().BeEmpty();
+        new TodoItemDto().Tags.Should().BeEmpty();
     }
 }

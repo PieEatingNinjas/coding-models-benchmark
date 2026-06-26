@@ -221,4 +221,75 @@ public class TodoEndpointsTests(TodoApiFactory factory) : IClassFixture<TodoApiF
 
         overdue.Should().Contain(t => t.Name == overdueName);
     }
+
+    [Fact]
+    public async Task Get_with_tag_filter_is_case_insensitive()
+    {
+        await _client.PostAsJsonAsync("/todoitems", new TodoItemDto
+        {
+            Name = "tagged-work-item",
+            IsComplete = false,
+            Tags = ["work", "urgent"],
+        });
+        await _client.PostAsJsonAsync("/todoitems", new TodoItemDto
+        {
+            Name = "tagged-home-item",
+            IsComplete = false,
+            Tags = ["home"],
+        });
+
+        var lowerCase = await _client.GetFromJsonAsync<List<TodoItemDto>>("/todoitems?tag=work");
+        var upperCase = await _client.GetFromJsonAsync<List<TodoItemDto>>("/todoitems?tag=WORK");
+
+        lowerCase.Should().Contain(t => t.Name == "tagged-work-item");
+        lowerCase.Should().NotContain(t => t.Name == "tagged-home-item");
+        upperCase.Should().Contain(t => t.Name == "tagged-work-item");
+        upperCase.Should().NotContain(t => t.Name == "tagged-home-item");
+    }
+
+    [Fact]
+    public async Task Get_with_no_tag_parameter_returns_all_items()
+    {
+        await _client.PostAsJsonAsync("/todoitems", new TodoItemDto
+        {
+            Name = "all-items-a",
+            IsComplete = false,
+            Tags = ["work"],
+        });
+        await _client.PostAsJsonAsync("/todoitems", new TodoItemDto
+        {
+            Name = "all-items-b",
+            IsComplete = false,
+            Tags = [],
+        });
+
+        var allItems = await _client.GetFromJsonAsync<List<TodoItemDto>>("/todoitems");
+
+        allItems.Should().Contain(t => t.Name == "all-items-a");
+        allItems.Should().Contain(t => t.Name == "all-items-b");
+    }
+
+    [Fact]
+    public async Task Put_overwrites_tags()
+    {
+        var post = await _client.PostAsJsonAsync("/todoitems", new TodoItemDto
+        {
+            Name = "put-tags-source",
+            IsComplete = false,
+            Tags = ["work", "urgent"],
+        });
+        var created = await post.Content.ReadFromJsonAsync<TodoItemDto>();
+
+        var put = await _client.PutAsJsonAsync($"/todoitems/{created!.Id}", new TodoItemDto
+        {
+            Name = "put-tags-source",
+            IsComplete = false,
+            Tags = ["home"],
+        });
+        put.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var fetched = await _client.GetFromJsonAsync<TodoItemDto>($"/todoitems/{created.Id}");
+        fetched.Should().NotBeNull();
+        fetched!.Tags.Should().Equal("home");
+    }
 }

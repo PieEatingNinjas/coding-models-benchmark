@@ -8,6 +8,7 @@ public class TodoItemDto
     public bool IsComplete { get; set; }
     public TodoPriority Priority { get; set; } = TodoPriority.Medium;
     public DateTimeOffset? DueDate { get; set; }
+    public List<string> Tags { get; set; } = [];
 }
 
 public static class TodoMapper
@@ -19,5 +20,6 @@ public static class TodoMapper
         IsComplete = item.IsComplete,
         Priority = item.Priority,
         DueDate = item.DueDate,
+        Tags = item.Tags is { Count: > 0 } tags ? [.. tags] : [],
     };
 }

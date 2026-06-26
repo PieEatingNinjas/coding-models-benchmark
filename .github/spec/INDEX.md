@@ -28,6 +28,7 @@
 | `priority` | domain-model, api-contracts, features/F1-priority |
 | `due-date` | domain-model, api-contracts, features/F2-due-dates |
 | `problemdetails` | api-contracts, features/F2-due-dates |
+| `tags` | domain-model, api-contracts, features/F3-tags |
 
 ## Feature plans (benchmark)
 

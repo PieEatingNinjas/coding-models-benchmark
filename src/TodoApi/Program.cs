@@ -19,8 +19,40 @@ var todos = app.MapGroup("/todoitems");
 static bool DueDateIsInPast(DateTimeOffset? dueDate) =>
     dueDate is { } value && value < DateTimeOffset.UtcNow;
 
-todos.MapGet("/", async (TodoDb db) =>
-    await db.Todos.Select(t => t.ToDto()).ToListAsync());
+static string NormalizeTag(string tag) => tag.Trim().ToLowerInvariant();
+
+static List<string> NormalizeTags(IEnumerable<string>? tags)
+{
+    if (tags is null)
+    {
+        return [];
+    }
+
+    HashSet<string> normalizedTags = [];
+    foreach (var tag in tags)
+    {
+        if (string.IsNullOrWhiteSpace(tag))
+        {
+            continue;
+        }
+
+        normalizedTags.Add(NormalizeTag(tag));
+    }
+
+    return [.. normalizedTags];
+}
+
+todos.MapGet("/", async (string? tag, TodoDb db) =>
+{
+    var query = db.Todos.AsQueryable();
+    if (!string.IsNullOrWhiteSpace(tag))
+    {
+        var normalizedTag = NormalizeTag(tag);
+        query = query.Where(todo => todo.Tags.Contains(normalizedTag));
+    }
+
+    return await query.Select(t => t.ToDto()).ToListAsync();
+});
 
 todos.MapGet("/complete", async (TodoDb db) =>
     await db.Todos.Where(t => t.IsComplete).Select(t => t.ToDto()).ToListAsync());
@@ -69,6 +101,7 @@ todos.MapPost("/", async (TodoItemDto dto, TodoDb db) =>
         IsComplete = dto.IsComplete,
         Priority = dto.Priority,
         DueDate = dto.DueDate,
+        Tags = NormalizeTags(dto.Tags),
     };
     db.Todos.Add(todo);
     await db.SaveChangesAsync();
@@ -91,6 +124,7 @@ todos.MapPut("/{id:int}", async (int id, TodoItemDto dto, TodoDb db) =>
     todo.IsComplete = dto.IsComplete;
     todo.Priority = dto.Priority;
     todo.DueDate = dto.DueDate;
+    todo.Tags = NormalizeTags(dto.Tags);
     await db.SaveChangesAsync();
     return Results.NoContent();
 });

@@ -2,7 +2,7 @@
 title: Domain Model
 category: data-model
 priority: 1
-tags: [dto, secret, efcore, due-date]
+tags: [dto, secret, efcore, due-date, tags]
 source: [src/TodoApi/Models]
 related_docs: [api-contracts.md]
 summary: TodoItem entity, TodoItemDto, and the mapping/Secret rule.
@@ -18,10 +18,11 @@ summary: TodoItem entity, TodoItemDto, and the mapping/Secret rule.
 | `IsComplete` | `bool` | done yes/no |
 | `Priority` | `TodoPriority` | `Low`/`Medium`/`High`; defaults to `Medium` |
 | `DueDate` | `DateTimeOffset?` | optional due date (timezone-aware) |
+| `Tags` | `List<string>` | optional tag set; normalized to lowercase + distinct |
 | `Secret` | `string?` | **internal; must never go out via the API** |
 
 ## TodoItemDto (contract — `TodoItemDto.cs`)
-Contains only `Id`, `Name`, `IsComplete`, `Priority`, `DueDate`. Has **no** `Secret` property — a compile-time guarantee that the field cannot leak.
+Contains only `Id`, `Name`, `IsComplete`, `Priority`, `DueDate`, `Tags`. `Tags` is always non-null and defaults to an empty collection. Has **no** `Secret` property — a compile-time guarantee that the field cannot leak.
 
 ## TodoPriority (`TodoPriority.cs`)
 Enum with values:
@@ -35,8 +36,11 @@ Enum with values:
 ## Persistence
 `TodoDb : DbContext` with `DbSet<TodoItem> Todos`, registered with the InMemory provider (`UseInMemoryDatabase("TodoList")`). Integration tests replace this with a uniquely named InMemory store per test class.
 
+Tag persistence choice for F3: tags are stored directly as a primitive text collection (`List<string>`) on `TodoItem`. On write (POST/PUT), tags are normalized (`Trim` + lowercase) and deduplicated case-insensitively, so each todo keeps a tag set.
+
 ## Invariants
 - A DTO never contains sensitive fields.
 - `Id` is assigned by persistence, not by the client (a POST-body `Id` is ignored).
 - Missing priority on input defaults to `Medium`.
 - `DueDate` is optional.
+- `Tags` are optional on input and default to an empty collection.
