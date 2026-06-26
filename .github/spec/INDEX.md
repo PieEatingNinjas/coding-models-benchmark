@@ -31,6 +31,7 @@
 | `tags` | domain-model, api-contracts, features/F3-tags |
 | `validation` | domain-model, api-contracts, features/F4-validation-pagination |
 | `pagination` | api-contracts, features/F4-validation-pagination |
+| `clean-architecture` | overview, domain-model, api-contracts, features/F5-clean-architecture |
 
 ## Feature plans (benchmark)
 

@@ -1,29 +1,19 @@
 using System.ComponentModel.DataAnnotations;
+using TodoApi.Domain.Todos;
 
-namespace TodoApi.Models;
+namespace TodoApi.Application.Todos;
 
 /// <summary>Public shape of a todo. Deliberately omits <c>Secret</c>.</summary>
 public class TodoItemDto
 {
     public int Id { get; set; }
+
     [Required]
     [MaxLength(200)]
     public string Name { get; set; } = string.Empty;
+
     public bool IsComplete { get; set; }
     public TodoPriority Priority { get; set; } = TodoPriority.Medium;
     public DateTimeOffset? DueDate { get; set; }
     public List<string> Tags { get; set; } = [];
-}
-
-public static class TodoMapper
-{
-    public static TodoItemDto ToDto(this TodoItem item) => new()
-    {
-        Id = item.Id,
-        Name = item.Name ?? string.Empty,
-        IsComplete = item.IsComplete,
-        Priority = item.Priority,
-        DueDate = item.DueDate,
-        Tags = item.Tags is { Count: > 0 } tags ? [.. tags] : [],
-    };
 }

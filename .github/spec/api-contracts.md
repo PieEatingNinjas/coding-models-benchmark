@@ -3,7 +3,7 @@ title: API Contracts
 category: api
 priority: 2
 tags: [crud, dto, due-date, problemdetails, tags, validation, pagination]
-source: [src/TodoApi/Program.cs]
+source: [src/TodoApi/Program.cs, src/TodoApi.Application/Todos/TodoService.cs]
 related_docs: [domain-model.md]
 summary: Endpoints under /todoitems with methods, bodies, and status codes.
 ---
@@ -27,6 +27,7 @@ Base route: `/todoitems`. All request/response bodies use `TodoItemDto` (JSON).
 | DELETE | `/todoitems/{id:int}` | — | `204` | `404` |
 
 ## Rules
+- Endpoints are thin and delegate behavior to the Application service layer.
 - POST ignores a supplied `Id`; persistence assigns the `Id`.
 - PUT overwrites `Name`, `IsComplete`, `Priority`, `DueDate`, and `Tags`.
 - POST/PUT default `Priority` to `Medium` when the property is omitted from JSON.

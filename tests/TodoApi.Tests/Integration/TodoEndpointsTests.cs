@@ -3,8 +3,9 @@ using System.Net.Http.Json;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
-using TodoApi.Data;
-using TodoApi.Models;
+using TodoApi.Application.Todos;
+using TodoApi.Domain.Todos;
+using TodoApi.Infrastructure.Data;
 using TodoApi.Tests.Support;
 using Xunit;
 

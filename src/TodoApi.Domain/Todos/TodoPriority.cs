@@ -1,4 +1,4 @@
-namespace TodoApi.Models;
+namespace TodoApi.Domain.Todos;
 
 public enum TodoPriority
 {

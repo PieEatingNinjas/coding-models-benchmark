@@ -19,6 +19,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\TodoApi\TodoApi.csproj" />
+    <ProjectReference Include="..\..\src\TodoApi.Application\TodoApi.Application.csproj" />
+    <ProjectReference Include="..\..\src\TodoApi.Infrastructure\TodoApi.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

@@ -42,9 +42,11 @@ this file together with that feature's checkpoint. Capture *how* it got to green
   **(no in-depth review done yet)**
 
 ## F5 — clean architecture
-- **Result:**
-- **Intervention:**
-- **Notes:**
+- **Result:** green 1 pass
+- **Intervention:** none
+- **Notes:** 92.7 credits
+
+  **(no in-depth review done yet)**
 
 ---
 

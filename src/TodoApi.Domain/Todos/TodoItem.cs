@@ -1,8 +1,8 @@
-namespace TodoApi.Models;
+namespace TodoApi.Domain.Todos;
 
 /// <summary>
-/// Persistence entity for a todo. <see cref="Secret"/> is sensitive and must never
-/// be exposed through the API — endpoints return <see cref="TodoItemDto"/> instead.
+/// Domain/persistence entity for a todo. <see cref="Secret"/> is sensitive and
+/// must never be exposed through API responses.
 /// </summary>
 public class TodoItem
 {
@@ -12,7 +12,5 @@ public class TodoItem
     public TodoPriority Priority { get; set; } = TodoPriority.Medium;
     public DateTimeOffset? DueDate { get; set; }
     public List<string> Tags { get; set; } = [];
-
-    /// <summary>Internal-only value; intentionally absent from the DTO.</summary>
     public string? Secret { get; set; }
 }
