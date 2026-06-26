@@ -22,6 +22,7 @@ public class TodoEndpointsTests(TodoApiFactory factory) : IClassFixture<TodoApiF
         var created = await post.Content.ReadFromJsonAsync<TodoItemDto>();
         created!.Id.Should().BeGreaterThan(0);
         created.Name.Should().Be(dto.Name);
+        created.Priority.Should().Be(dto.Priority);
 
         var fetched = await _client.GetFromJsonAsync<TodoItemDto>($"/todoitems/{created.Id}");
         fetched!.Name.Should().Be(dto.Name);
@@ -59,17 +60,57 @@ public class TodoEndpointsTests(TodoApiFactory factory) : IClassFixture<TodoApiF
         var created = await post.Content.ReadFromJsonAsync<TodoItemDto>();
 
         var put = await _client.PutAsJsonAsync($"/todoitems/{created!.Id}",
-            new TodoItemDto { Name = "updated", IsComplete = true });
+            new TodoItemDto { Name = "updated", IsComplete = true, Priority = TodoPriority.High });
         put.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         var afterUpdate = await _client.GetFromJsonAsync<TodoItemDto>($"/todoitems/{created.Id}");
         afterUpdate!.Name.Should().Be("updated");
         afterUpdate.IsComplete.Should().BeTrue();
+        afterUpdate.Priority.Should().Be(TodoPriority.High);
 
         var delete = await _client.DeleteAsync($"/todoitems/{created.Id}");
         delete.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         var afterDelete = await _client.GetAsync($"/todoitems/{created.Id}");
         afterDelete.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task Post_without_priority_defaults_to_medium()
+    {
+        var post = await _client.PostAsJsonAsync("/todoitems", new
+        {
+            name = "no-priority",
+            isComplete = false,
+        });
+
+        post.StatusCode.Should().Be(HttpStatusCode.Created);
+        var created = await post.Content.ReadFromJsonAsync<TodoItemDto>();
+        created!.Priority.Should().Be(TodoPriority.Medium);
+    }
+
+    [Fact]
+    public async Task By_priority_returns_matching_items_only()
+    {
+        await _client.PostAsJsonAsync("/todoitems",
+            new TodoItemDto { Name = "high-item", IsComplete = false, Priority = TodoPriority.High });
+        await _client.PostAsJsonAsync("/todoitems",
+            new TodoItemDto { Name = "low-item", IsComplete = false, Priority = TodoPriority.Low });
+
+        var high = await _client.GetFromJsonAsync<List<TodoItemDto>>("/todoitems/by-priority/High");
+        var low = await _client.GetFromJsonAsync<List<TodoItemDto>>("/todoitems/by-priority/Low");
+
+        high.Should().Contain(t => t.Name == "high-item");
+        high.Should().NotContain(t => t.Name == "low-item");
+        low.Should().Contain(t => t.Name == "low-item");
+        low.Should().NotContain(t => t.Name == "high-item");
+    }
+
+    [Fact]
+    public async Task By_priority_invalid_value_returns_400()
+    {
+        var response = await _client.GetAsync("/todoitems/by-priority/not-a-priority");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 }

@@ -6,6 +6,7 @@ public class TodoItemDto
     public int Id { get; set; }
     public string? Name { get; set; }
     public bool IsComplete { get; set; }
+    public TodoPriority Priority { get; set; } = TodoPriority.Medium;
 }
 
 public static class TodoMapper
@@ -15,5 +16,6 @@ public static class TodoMapper
         Id = item.Id,
         Name = item.Name,
         IsComplete = item.IsComplete,
+        Priority = item.Priority,
     };
 }

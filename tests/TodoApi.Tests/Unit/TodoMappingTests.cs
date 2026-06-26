@@ -17,6 +17,7 @@ public class TodoMappingTests
         dto.Id.Should().Be(item.Id);
         dto.Name.Should().Be(item.Name);
         dto.IsComplete.Should().Be(item.IsComplete);
+        dto.Priority.Should().Be(item.Priority);
     }
 
     [Fact]
@@ -35,5 +36,12 @@ public class TodoMappingTests
         item.IsComplete = complete;
 
         item.ToDto().IsComplete.Should().Be(complete);
+    }
+
+    [Fact]
+    public void TodoItem_and_TodoItemDto_default_priority_to_medium()
+    {
+        new TodoItem().Priority.Should().Be(TodoPriority.Medium);
+        new TodoItemDto().Priority.Should().Be(TodoPriority.Medium);
     }
 }

@@ -25,6 +25,7 @@
 | `secret` | domain-model |
 | `crud` | api-contracts |
 | `efcore` | domain-model |
+| `priority` | domain-model, api-contracts, features/F1-priority |
 
 ## Feature plans (benchmark)
 
