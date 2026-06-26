@@ -7,6 +7,7 @@ public class TodoItemDto
     public string? Name { get; set; }
     public bool IsComplete { get; set; }
     public TodoPriority Priority { get; set; } = TodoPriority.Medium;
+    public DateTimeOffset? DueDate { get; set; }
 }
 
 public static class TodoMapper
@@ -17,5 +18,6 @@ public static class TodoMapper
         Name = item.Name,
         IsComplete = item.IsComplete,
         Priority = item.Priority,
+        DueDate = item.DueDate,
     };
 }

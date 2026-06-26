@@ -2,7 +2,7 @@
 title: Domain Model
 category: data-model
 priority: 1
-tags: [dto, secret, efcore]
+tags: [dto, secret, efcore, due-date]
 source: [src/TodoApi/Models]
 related_docs: [api-contracts.md]
 summary: TodoItem entity, TodoItemDto, and the mapping/Secret rule.
@@ -17,10 +17,11 @@ summary: TodoItem entity, TodoItemDto, and the mapping/Secret rule.
 | `Name` | `string?` | task title |
 | `IsComplete` | `bool` | done yes/no |
 | `Priority` | `TodoPriority` | `Low`/`Medium`/`High`; defaults to `Medium` |
+| `DueDate` | `DateTimeOffset?` | optional due date (timezone-aware) |
 | `Secret` | `string?` | **internal; must never go out via the API** |
 
 ## TodoItemDto (contract — `TodoItemDto.cs`)
-Contains only `Id`, `Name`, `IsComplete`, `Priority`. Has **no** `Secret` property — a compile-time guarantee that the field cannot leak.
+Contains only `Id`, `Name`, `IsComplete`, `Priority`, `DueDate`. Has **no** `Secret` property — a compile-time guarantee that the field cannot leak.
 
 ## TodoPriority (`TodoPriority.cs`)
 Enum with values:
@@ -38,3 +39,4 @@ Enum with values:
 - A DTO never contains sensitive fields.
 - `Id` is assigned by persistence, not by the client (a POST-body `Id` is ignored).
 - Missing priority on input defaults to `Medium`.
+- `DueDate` is optional.

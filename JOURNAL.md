@@ -21,9 +21,11 @@ this file together with that feature's checkpoint. Capture *how* it got to green
 - **Notes:** 47 credits
 
 ## F2 — due dates
-- **Result:**
-- **Intervention:**
-- **Notes:**
+- **Result:** green 1 pass
+- **Intervention:** none
+- **Notes:** 45.6 credits 
+  
+  **(no in-depth review done yet)**
 
 ## F3 — tags
 - **Result:**

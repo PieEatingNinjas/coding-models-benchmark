@@ -10,12 +10,14 @@ public static class TodoItemFaker
         .RuleFor(t => t.Id, _ => 0)
         .RuleFor(t => t.Name, f => $"{f.Hacker.Verb()} {f.Hacker.Noun()}")
         .RuleFor(t => t.IsComplete, f => f.Random.Bool())
-        .RuleFor(t => t.Priority, f => f.PickRandom<TodoPriority>());
+        .RuleFor(t => t.Priority, f => f.PickRandom<TodoPriority>())
+        .RuleFor(t => t.DueDate, _ => null);
 
     public static Faker<TodoItem> Entity() => new Faker<TodoItem>()
         .RuleFor(t => t.Id, _ => 0)
         .RuleFor(t => t.Name, f => $"{f.Hacker.Verb()} {f.Hacker.Noun()}")
         .RuleFor(t => t.IsComplete, f => f.Random.Bool())
         .RuleFor(t => t.Priority, f => f.PickRandom<TodoPriority>())
+        .RuleFor(t => t.DueDate, _ => null)
         .RuleFor(t => t.Secret, f => f.Internet.Password());
 }

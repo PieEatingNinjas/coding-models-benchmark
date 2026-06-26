@@ -1,6 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
+using TodoApi.Data;
 using TodoApi.Models;
 using TodoApi.Tests.Support;
 using Xunit;
@@ -9,6 +12,7 @@ namespace TodoApi.Tests.Integration;
 
 public class TodoEndpointsTests(TodoApiFactory factory) : IClassFixture<TodoApiFactory>
 {
+    private readonly TodoApiFactory _factory = factory;
     private readonly HttpClient _client = factory.CreateClient();
 
     [Fact]
@@ -112,5 +116,109 @@ public class TodoEndpointsTests(TodoApiFactory factory) : IClassFixture<TodoApiF
         var response = await _client.GetAsync("/todoitems/by-priority/not-a-priority");
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task Post_with_past_due_date_returns_400_problem_details()
+    {
+        var response = await _client.PostAsJsonAsync("/todoitems", new TodoItemDto
+        {
+            Name = "past-post",
+            IsComplete = false,
+            DueDate = DateTimeOffset.UtcNow.AddDays(-7),
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.Content.Headers.ContentType?.MediaType.Should().Be("application/problem+json");
+
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        problem.Should().NotBeNull();
+        problem!.Title.Should().Be("Invalid due date");
+        problem.Status.Should().Be((int)HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task Put_with_past_due_date_returns_400_problem_details()
+    {
+        var post = await _client.PostAsJsonAsync("/todoitems", new TodoItemDto
+        {
+            Name = "put-past-source",
+            IsComplete = false,
+            DueDate = DateTimeOffset.UtcNow.AddDays(3),
+        });
+        var created = await post.Content.ReadFromJsonAsync<TodoItemDto>();
+
+        var response = await _client.PutAsJsonAsync($"/todoitems/{created!.Id}", new TodoItemDto
+        {
+            Name = "put-past-target",
+            IsComplete = false,
+            DueDate = DateTimeOffset.UtcNow.AddDays(-7),
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.Content.Headers.ContentType?.MediaType.Should().Be("application/problem+json");
+
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        problem.Should().NotBeNull();
+        problem!.Title.Should().Be("Invalid due date");
+        problem.Status.Should().Be((int)HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task Overdue_excludes_items_without_due_date()
+    {
+        const string noDueDateName = "overdue-no-due-date";
+        await _client.PostAsJsonAsync("/todoitems", new TodoItemDto
+        {
+            Name = noDueDateName,
+            IsComplete = false,
+            DueDate = null,
+        });
+
+        var overdue = await _client.GetFromJsonAsync<List<TodoItemDto>>("/todoitems/overdue");
+
+        overdue.Should().NotContain(t => t.Name == noDueDateName);
+    }
+
+    [Fact]
+    public async Task Overdue_excludes_completed_items_with_expired_due_date()
+    {
+        const string completedExpiredName = "overdue-completed-expired-db";
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<TodoDb>();
+            db.Todos.Add(new TodoItem
+            {
+                Name = completedExpiredName,
+                IsComplete = true,
+                DueDate = DateTimeOffset.UtcNow.AddDays(-2),
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var overdue = await _client.GetFromJsonAsync<List<TodoItemDto>>("/todoitems/overdue");
+
+        overdue.Should().NotContain(t => t.Name == completedExpiredName);
+    }
+
+    [Fact]
+    public async Task Overdue_includes_incomplete_items_with_expired_due_date()
+    {
+        const string overdueName = "overdue-incomplete-expired-db";
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<TodoDb>();
+            db.Todos.Add(new TodoItem
+            {
+                Name = overdueName,
+                IsComplete = false,
+                DueDate = DateTimeOffset.UtcNow.AddDays(-2),
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var overdue = await _client.GetFromJsonAsync<List<TodoItemDto>>("/todoitems/overdue");
+
+        overdue.Should().Contain(t => t.Name == overdueName);
     }
 }
