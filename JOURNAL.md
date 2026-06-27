@@ -30,7 +30,9 @@ this file together with that feature's checkpoint. Capture *how* it got to green
 ## F3 — tags
 - **Result:**
 - **Intervention:**
-- **Notes:**
+- **Notes:** 20.3 credits
+
+  Different approach to the tags. Not a fan of collapsing the list into a single (string) column: future DB-side filtering will be a pain (it currently loads all rows and filters in memory). Do like putting the tag handling (SetTags, normalizing) on the domain model.
 
 ## F4 — validation & pagination
 - **Result:**

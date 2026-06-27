@@ -16,8 +16,17 @@ if (app.Environment.IsDevelopment())
 
 var todos = app.MapGroup("/todoitems");
 
-todos.MapGet("/", async (TodoDb db) =>
-    await db.Todos.Select(t => t.ToDto()).ToListAsync());
+todos.MapGet("/", async (string? tag, TodoDb db) =>
+{
+    var normalizedTag = TodoItem.NormalizeTag(tag);
+    var items = await db.Todos.ToListAsync();
+    var filtered = items
+        .Where(todo => string.IsNullOrEmpty(normalizedTag) || todo.HasTag(normalizedTag))
+        .Select(todo => todo.ToDto())
+        .ToList();
+
+    return Results.Ok(filtered);
+});
 
 todos.MapGet("/complete", async (TodoDb db) =>
     await db.Todos.Where(t => t.IsComplete).Select(t => t.ToDto()).ToListAsync());
@@ -71,6 +80,7 @@ todos.MapPost("/", async (TodoItemDto dto, TodoDb db) =>
         Priority = dto.Priority,
         DueDate = dto.DueDate,
     };
+    todo.SetTags(dto.Tags);
     db.Todos.Add(todo);
     await db.SaveChangesAsync();
     return Results.Created($"/todoitems/{todo.Id}", todo.ToDto());
@@ -94,6 +104,7 @@ todos.MapPut("/{id:int}", async (int id, TodoItemDto dto, TodoDb db) =>
     todo.IsComplete = dto.IsComplete;
     todo.Priority = dto.Priority;
     todo.DueDate = dto.DueDate;
+    todo.SetTags(dto.Tags);
     await db.SaveChangesAsync();
     return Results.NoContent();
 });

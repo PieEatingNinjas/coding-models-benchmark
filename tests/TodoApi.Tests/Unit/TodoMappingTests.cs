@@ -22,6 +22,31 @@ public class TodoMappingTests
     }
 
     [Fact]
+    public void ToDto_maps_normalized_tags()
+    {
+        var item = new TodoItem
+        {
+            Name = "task",
+            Tags = ["Work", "urgent", "work"],
+        };
+
+        var dto = item.ToDto();
+
+        dto.Tags.Should().Equal("work", "urgent");
+    }
+
+    [Fact]
+    public void ToDto_defaults_tags_to_empty_collection_when_not_set()
+    {
+        var item = new TodoItem { Name = "task" };
+
+        var dto = item.ToDto();
+
+        dto.Tags.Should().NotBeNull();
+        dto.Tags.Should().BeEmpty();
+    }
+
+    [Fact]
     public void ToDto_defaults_priority_to_medium_when_not_set()
     {
         var item = new TodoItem

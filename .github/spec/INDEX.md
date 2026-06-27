@@ -27,6 +27,7 @@
 | `efcore` | domain-model |
 | `priority` | domain-model, api-contracts |
 | `due-date` | domain-model, api-contracts |
+| `tags` | domain-model, api-contracts, features/F3-tags.md |
 
 ## Feature plans (benchmark)
 

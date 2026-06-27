@@ -112,6 +112,30 @@ public class TodoEndpointsTests(TodoApiFactory factory) : IClassFixture<TodoApiF
     }
 
     [Fact]
+    public async Task Get_with_tag_filters_case_insensitively_and_returns_all_without_filter()
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<TodoDb>();
+        db.Todos.RemoveRange(db.Todos);
+        await db.SaveChangesAsync();
+
+        await _client.PostAsJsonAsync("/todoitems",
+            new TodoItemDto { Name = "tagged-work", IsComplete = false, Tags = ["work", "urgent"] });
+        await _client.PostAsJsonAsync("/todoitems",
+            new TodoItemDto { Name = "tagged-urgent", IsComplete = false, Tags = ["urgent"] });
+        await _client.PostAsJsonAsync("/todoitems",
+            new TodoItemDto { Name = "untagged", IsComplete = false });
+
+        var filtered = await _client.GetFromJsonAsync<List<TodoItemDto>>("/todoitems?tag=WORK");
+        filtered.Should().ContainSingle(item => item.Name == "tagged-work");
+        filtered.Should().NotContain(item => item.Name == "tagged-urgent");
+        filtered.Should().NotContain(item => item.Name == "untagged");
+
+        var all = await _client.GetFromJsonAsync<List<TodoItemDto>>("/todoitems");
+        all.Should().HaveCount(3);
+    }
+
+    [Fact]
     public async Task Get_unknown_returns_404()
     {
         var resp = await _client.GetAsync("/todoitems/999999");

@@ -2,7 +2,7 @@
 title: Domain Model
 category: data-model
 priority: 1
-tags: [dto, secret, efcore]
+tags: [dto, secret, efcore, tags]
 source: [src/TodoApi/Models]
 related_docs: [api-contracts.md]
 summary: TodoItem entity, TodoItemDto, and the mapping/Secret rule.
@@ -18,17 +18,19 @@ summary: TodoItem entity, TodoItemDto, and the mapping/Secret rule.
 | `IsComplete` | `bool` | done yes/no |
 | `Priority` | `TodoPriority` | `Low`/`Medium`/`High`, default `Medium` |
 | `DueDate` | `DateTimeOffset?` | optional timezone-aware deadline |
+| `Tags` | `List<string>` | normalized, trimmed, lowercase tags; empty means no tags |
 | `Secret` | `string?` | **internal; must never go out via the API** |
 
 ## TodoItemDto (contract — `TodoItemDto.cs`)
-Contains `Id`, `Name`, `IsComplete`, `Priority`, and `DueDate`. Has **no** `Secret` property — a compile-time guarantee that the field cannot leak.
+Contains `Id`, `Name`, `IsComplete`, `Priority`, `DueDate`, and `Tags`. Has **no** `Secret` property — a compile-time guarantee that the field cannot leak. `Tags` is always a collection, never `null`; an item without tags returns an empty collection.
 
 ## Mapping
-`TodoMapper.ToDto(this TodoItem)` projects entity → DTO. All endpoints use this mapping; they never return the entity directly.
+`TodoMapper.ToDto(this TodoItem)` projects entity → DTO. All endpoints use this mapping; they never return the entity directly. Tag values are normalized to lowercase, trimmed, and deduplicated before being exposed in the DTO.
 
 ## Persistence
-`TodoDb : DbContext` with `DbSet<TodoItem> Todos`, registered with the InMemory provider (`UseInMemoryDatabase("TodoList")`). Integration tests replace this with a uniquely named InMemory store per test class.
+`TodoDb : DbContext` with `DbSet<TodoItem> Todos`, registered with the InMemory provider (`UseInMemoryDatabase("TodoList")`). The `Tags` collection is persisted as a JSON-serialized string value so the InMemory provider can store it. Integration tests replace this with a uniquely named InMemory store per test class.
 
 ## Invariants
 - A DTO never contains sensitive fields.
 - `Id` is assigned by persistence, not by the client (a POST-body `Id` is ignored).
+- Tags are normalized to lowercase, trimmed, and deduplicated so the set semantics are preserved.
