@@ -17,6 +17,7 @@ A minimal, correct todo API that serves as a **fixed, simple baseline** for comp
 - CRUD over todo items via a Minimal Web API.
 - Persistence via EF Core InMemory (no real database needed).
 - Strict separation between entity (`TodoItem`) and public contract (`TodoItemDto`).
+- A layered structure for the same behavior: Domain, Application, Infrastructure, and API projects.
 - Unit and integration tests (xUnit, Bogus, FluentAssertions).
 
 ## Non-goals (baseline)
@@ -27,3 +28,4 @@ A minimal, correct todo API that serves as a **fixed, simple baseline** for comp
 ## Quality bar
 - `dotnet build -warnaserror` and `dotnet test` green.
 - Endpoints never leak the `Secret` property.
+- Dependencies point inward: API → Application → Domain, with Infrastructure implementing the Application abstractions.

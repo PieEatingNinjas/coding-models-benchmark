@@ -1,8 +1,5 @@
-using System.Text.Json.Serialization;
-
 namespace TodoApi.Models;
 
-[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum TodoPriority
 {
     Low,
@@ -14,7 +11,13 @@ public static class TodoPriorityExtensions
 {
     public static bool TryParsePriority(string? value, out TodoPriority priority)
     {
-        if (Enum.TryParse(value, ignoreCase: true, out priority) && Enum.IsDefined(priority))
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            priority = TodoPriority.Medium;
+            return false;
+        }
+
+        if (Enum.TryParse<TodoPriority>(value.Trim(), ignoreCase: true, out priority))
         {
             return true;
         }

@@ -17,6 +17,13 @@
 - **data-model:** domain-model
 - **api:** api-contracts
 
+## Clean architecture structure
+
+- `src/TodoApi.Domain` — domain entities and value objects; no framework or persistence dependencies.
+- `src/TodoApi.Application` — use cases/services and repository abstractions; depends on Domain.
+- `src/TodoApi.Infrastructure` — EF Core repository implementations and `TodoDb`; depends on Application/Domain.
+- `src/TodoApi` — Minimal API endpoints and dependency injection wiring; depends on Application.
+
 ## Tags index
 
 | Tag | Specs |

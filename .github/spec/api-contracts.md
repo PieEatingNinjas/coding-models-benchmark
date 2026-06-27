@@ -10,7 +10,7 @@ summary: Endpoints under /todoitems with methods, bodies, and status codes.
 
 # API Contracts
 
-Base route: `/todoitems`. All request/response bodies use `TodoItemDto` (JSON).
+Base route: `/todoitems`. All request/response bodies use `TodoItemDto` (JSON). The routes remain externally identical, but the endpoint handlers now delegate into the Application-layer `TodoItemService` instead of containing the business logic inline.
 
 | Method | Route | Body | Success | Error |
 |--------|-------|------|---------|-------|

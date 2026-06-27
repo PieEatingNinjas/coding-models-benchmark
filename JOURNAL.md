@@ -44,7 +44,7 @@ this file together with that feature's checkpoint. Capture *how* it got to green
 ## F5 — clean architecture
 - **Result:**
 - **Intervention:**
-- **Notes:**
+- **Notes:** 41.1 credits
 
 ---
 
