@@ -14,7 +14,8 @@ Base route: `/todoitems`. All request/response bodies use `TodoItemDto` (JSON).
 
 | Method | Route | Body | Success | Error |
 |--------|-------|------|---------|-------|
-| GET | `/todoitems` | — | `200` list of DTOs | — |
+| GET | `/todoitems` | — | `200` list of DTOs | `400` for invalid pagination parameters |
+| GET | `/todoitems?page=<n>&pageSize=<m>` | — | `200` paginated list of DTOs; response header `X-Total-Count` reports the total matching items | `400` for invalid pagination parameters |
 | GET | `/todoitems?tag=<x>` | — | `200` list of DTOs filtered by tag (full list if omitted) | — |
 | GET | `/todoitems/complete` | — | `200` completed DTOs only | — |
 | GET | `/todoitems/overdue` | — | `200` overdue DTOs only | — |
@@ -32,6 +33,9 @@ Base route: `/todoitems`. All request/response bodies use `TodoItemDto` (JSON).
 - A missing priority on POST/PUT defaults to `Medium`.
 - `DueDate` is optional and serialized as an RFC3339 timestamp when present.
 - POST/PUT reject a supplied due date that is earlier than the current request time with `400` ProblemDetails.
+- POST/PUT reject a blank `Name` with `400` ProblemDetails and reject a `Name` longer than 200 characters with `400` ProblemDetails.
+- `GET /todoitems?page=<n>&pageSize=<m>` uses `page=1` and `pageSize=20` by default; `pageSize` is capped at `100`, and `page`/`pageSize` values below `1` are rejected with `400` ProblemDetails.
+- The list endpoint returns an `X-Total-Count` response header containing the total number of matching items before pagination is applied.
 - `GET /todoitems?tag=<x>` filters case-insensitively; an empty or missing `tag` parameter returns the full list.
 - Tags are normalized to lowercase, trimmed, and deduplicated on input and output.
 - `GET /todoitems/overdue` returns todos that are incomplete, have a due date, and are past due.

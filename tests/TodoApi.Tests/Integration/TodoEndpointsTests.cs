@@ -43,6 +43,33 @@ public class TodoEndpointsTests(TodoApiFactory factory) : IClassFixture<TodoApiF
     }
 
     [Fact]
+    public async Task Post_without_name_returns_problem_details()
+    {
+        var response = await _client.PostAsJsonAsync("/todoitems",
+            new TodoItemDto { IsComplete = false });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        problem.Should().NotBeNull();
+        problem!.Status.Should().Be(400);
+        problem.Extensions.Should().ContainKey("errors");
+    }
+
+    [Fact]
+    public async Task Post_with_name_longer_than_200_characters_returns_problem_details()
+    {
+        var response = await _client.PostAsJsonAsync("/todoitems",
+            new TodoItemDto { Name = new string('a', 201), IsComplete = false });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        problem.Should().NotBeNull();
+        problem!.Status.Should().Be(400);
+    }
+
+    [Fact]
     public async Task Post_with_past_due_date_returns_problem_details()
     {
         var response = await _client.PostAsJsonAsync("/todoitems",
@@ -136,6 +163,61 @@ public class TodoEndpointsTests(TodoApiFactory factory) : IClassFixture<TodoApiF
     }
 
     [Fact]
+    public async Task Get_returns_paginated_items_with_total_count_header_and_defaults()
+    {
+        await ResetDatabaseAsync();
+
+        for (var i = 0; i < 25; i++)
+        {
+            await _client.PostAsJsonAsync("/todoitems", new TodoItemDto { Name = $"todo-{i}", IsComplete = false });
+        }
+
+        var firstPage = await _client.GetAsync("/todoitems?page=1&pageSize=20");
+        firstPage.StatusCode.Should().Be(HttpStatusCode.OK);
+        firstPage.Headers.GetValues("X-Total-Count").Should().ContainSingle().Which.Should().Be("25");
+
+        var firstPageItems = await firstPage.Content.ReadFromJsonAsync<List<TodoItemDto>>();
+        firstPageItems.Should().HaveCount(20);
+
+        var secondPage = await _client.GetAsync("/todoitems?page=2&pageSize=20");
+        secondPage.StatusCode.Should().Be(HttpStatusCode.OK);
+        secondPage.Headers.GetValues("X-Total-Count").Should().ContainSingle().Which.Should().Be("25");
+
+        var secondPageItems = await secondPage.Content.ReadFromJsonAsync<List<TodoItemDto>>();
+        secondPageItems.Should().HaveCount(5);
+
+        var defaultPage = await _client.GetAsync("/todoitems");
+        defaultPage.StatusCode.Should().Be(HttpStatusCode.OK);
+        defaultPage.Headers.GetValues("X-Total-Count").Should().ContainSingle().Which.Should().Be("25");
+
+        var defaultItems = await defaultPage.Content.ReadFromJsonAsync<List<TodoItemDto>>();
+        defaultItems.Should().HaveCount(20);
+    }
+
+    [Fact]
+    public async Task Get_clamps_page_size_to_upper_bound_and_rejects_invalid_page_values()
+    {
+        await ResetDatabaseAsync();
+
+        for (var i = 0; i < 5; i++)
+        {
+            await _client.PostAsJsonAsync("/todoitems", new TodoItemDto { Name = $"page-size-{i}", IsComplete = false });
+        }
+
+        var clamped = await _client.GetAsync("/todoitems?page=1&pageSize=500");
+        clamped.StatusCode.Should().Be(HttpStatusCode.OK);
+        var clampedItems = await clamped.Content.ReadFromJsonAsync<List<TodoItemDto>>();
+        clampedItems.Should().HaveCount(5);
+
+        var invalidPage = await _client.GetAsync("/todoitems?page=0");
+        invalidPage.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var problem = await invalidPage.Content.ReadFromJsonAsync<ProblemDetails>();
+        problem.Should().NotBeNull();
+        problem!.Status.Should().Be(400);
+    }
+
+    [Fact]
     public async Task Get_unknown_returns_404()
     {
         var resp = await _client.GetAsync("/todoitems/999999");
@@ -179,5 +261,13 @@ public class TodoEndpointsTests(TodoApiFactory factory) : IClassFixture<TodoApiF
 
         var afterDelete = await _client.GetAsync($"/todoitems/{created.Id}");
         afterDelete.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    private async Task ResetDatabaseAsync()
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<TodoDb>();
+        db.Todos.RemoveRange(db.Todos);
+        await db.SaveChangesAsync();
     }
 }

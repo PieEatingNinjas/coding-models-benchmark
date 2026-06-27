@@ -37,7 +37,9 @@ this file together with that feature's checkpoint. Capture *how* it got to green
 ## F4 — validation & pagination
 - **Result:**
 - **Intervention:**
-- **Notes:**
+- **Notes:** 13.8 credits
+
+   Paging in memory (load all, then slice) as a result of the tags filtering. Curiuous if F5 will fix this.
 
 ## F5 — clean architecture
 - **Result:**

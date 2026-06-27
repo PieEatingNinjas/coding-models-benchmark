@@ -28,6 +28,8 @@
 | `priority` | domain-model, api-contracts |
 | `due-date` | domain-model, api-contracts |
 | `tags` | domain-model, api-contracts, features/F3-tags.md |
+| `pagination` | api-contracts, features/F4-validation-pagination.md |
+| `problemdetails` | api-contracts, features/F4-validation-pagination.md |
 
 ## Feature plans (benchmark)
 
