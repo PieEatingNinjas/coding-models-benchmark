@@ -26,6 +26,7 @@
 | `crud` | api-contracts |
 | `efcore` | domain-model |
 | `priority` | domain-model, api-contracts |
+| `due-date` | domain-model, api-contracts |
 
 ## Feature plans (benchmark)
 

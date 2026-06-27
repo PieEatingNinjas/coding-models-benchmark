@@ -18,6 +18,7 @@ public class TodoMappingTests
         dto.Name.Should().Be(item.Name);
         dto.IsComplete.Should().Be(item.IsComplete);
         dto.Priority.Should().Be(item.Priority);
+        dto.DueDate.Should().Be(item.DueDate);
     }
 
     [Fact]
@@ -32,6 +33,21 @@ public class TodoMappingTests
         var dto = item.ToDto();
 
         dto.Priority.Should().Be(TodoPriority.Medium);
+    }
+
+    [Fact]
+    public void ToDto_maps_due_date()
+    {
+        var item = new TodoItem
+        {
+            Name = "task",
+            IsComplete = false,
+            DueDate = DateTimeOffset.UtcNow.AddDays(1),
+        };
+
+        var dto = item.ToDto();
+
+        dto.DueDate.Should().Be(item.DueDate);
     }
 
     [Fact]

@@ -21,9 +21,11 @@ this file together with that feature's checkpoint. Capture *how* it got to green
 - **Notes:** 14.8 credits
 
 ## F2 — due dates
-- **Result:**
-- **Intervention:**
-- **Notes:**
+- **Result:** green 1 pass
+- **Intervention:** non
+- **Notes:** 21.8 credits
+  
+  Date check in both POST and PUT (small DRY violation, but consistent with KISS - don't overengineer)
 
 ## F3 — tags
 - **Result:**

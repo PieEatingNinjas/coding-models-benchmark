@@ -22,6 +22,17 @@ todos.MapGet("/", async (TodoDb db) =>
 todos.MapGet("/complete", async (TodoDb db) =>
     await db.Todos.Where(t => t.IsComplete).Select(t => t.ToDto()).ToListAsync());
 
+todos.MapGet("/overdue", async (TodoDb db) =>
+{
+    var now = DateTimeOffset.UtcNow;
+    var overdue = await db.Todos
+        .Where(t => !t.IsComplete && t.DueDate.HasValue && t.DueDate.Value < now)
+        .Select(t => t.ToDto())
+        .ToListAsync();
+
+    return Results.Ok(overdue);
+});
+
 todos.MapGet("/by-priority/{priority}", async (string priority, TodoDb db) =>
 {
     if (!TodoPriorityExtensions.TryParsePriority(priority, out var parsedPriority))
@@ -44,11 +55,21 @@ todos.MapGet("/{id:int}", async (int id, TodoDb db) =>
 
 todos.MapPost("/", async (TodoItemDto dto, TodoDb db) =>
 {
+    var now = DateTimeOffset.UtcNow;
+    if (dto.DueDate is { } dueDate && dueDate < now)
+    {
+        return Results.Problem(
+            title: "Invalid due date",
+            detail: "Due date cannot be in the past.",
+            statusCode: StatusCodes.Status400BadRequest);
+    }
+
     var todo = new TodoItem
     {
         Name = dto.Name,
         IsComplete = dto.IsComplete,
         Priority = dto.Priority,
+        DueDate = dto.DueDate,
     };
     db.Todos.Add(todo);
     await db.SaveChangesAsync();
@@ -57,12 +78,22 @@ todos.MapPost("/", async (TodoItemDto dto, TodoDb db) =>
 
 todos.MapPut("/{id:int}", async (int id, TodoItemDto dto, TodoDb db) =>
 {
+    var now = DateTimeOffset.UtcNow;
+    if (dto.DueDate is { } dueDate && dueDate < now)
+    {
+        return Results.Problem(
+            title: "Invalid due date",
+            detail: "Due date cannot be in the past.",
+            statusCode: StatusCodes.Status400BadRequest);
+    }
+
     var todo = await db.Todos.FindAsync(id);
     if (todo is null) return Results.NotFound();
 
     todo.Name = dto.Name;
     todo.IsComplete = dto.IsComplete;
     todo.Priority = dto.Priority;
+    todo.DueDate = dto.DueDate;
     await db.SaveChangesAsync();
     return Results.NoContent();
 });
