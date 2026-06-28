@@ -6,9 +6,9 @@ this file together with that feature's checkpoint. Capture *how* it got to green
 
 | Field | Value |
 |-------|-------|
-| Model | |
-| Mode | _(dev = DeveloperAgent / orch = OrchestratorAgent)_ |
-| Reasoning effort | |
+| Model | Gemini 3.1 Pro |
+| Mode | dev |
+| Reasoning effort | Medium |
 | Dropdown model (if agent `model:` left blank) | |
 | Date | |
 | Baseline | |
@@ -18,7 +18,7 @@ this file together with that feature's checkpoint. Capture *how* it got to green
 ## F1 — priority
 - **Result:** _(green 1 pass / green after N tries / red → manual fix)_
 - **Intervention:** _(none / what you changed by hand and why)_
-- **Notes:**
+- **Notes:** 64.5 credits
 
 ## F2 — due dates
 - **Result:**

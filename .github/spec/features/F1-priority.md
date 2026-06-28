@@ -3,7 +3,7 @@ title: "Feature F1 — Priority"
 category: feature-plan
 priority: 1
 tags: [priority, filter, enum]
-status: ready
+status: implemented
 planner_model: "Claude Opus 4.8"
 related_docs: [../domain-model.md, ../api-contracts.md]
 summary: Todos get a priority and you can filter on it.

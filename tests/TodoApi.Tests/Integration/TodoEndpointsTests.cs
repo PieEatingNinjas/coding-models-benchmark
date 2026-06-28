@@ -72,4 +72,40 @@ public class TodoEndpointsTests(TodoApiFactory factory) : IClassFixture<TodoApiF
         var afterDelete = await _client.GetAsync($"/todoitems/{created.Id}");
         afterDelete.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
+
+    [Fact]
+    public async Task Post_without_priority_defaults_to_medium()
+    {
+        var dto = new TodoItemDto { Name = "default-priority", IsComplete = false };
+
+        var post = await _client.PostAsJsonAsync("/todoitems", dto);
+        post.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var created = await post.Content.ReadFromJsonAsync<TodoItemDto>();
+        created!.Priority.Should().Be(Priority.Medium);
+    }
+
+    [Fact]
+    public async Task Filter_by_priority_returns_matching_items()
+    {
+        await _client.PostAsJsonAsync("/todoitems",
+            new TodoItemDto { Name = "high-prio", Priority = Priority.High });
+        await _client.PostAsJsonAsync("/todoitems",
+            new TodoItemDto { Name = "low-prio", Priority = Priority.Low });
+
+        var highItems = await _client.GetFromJsonAsync<List<TodoItemDto>>("/todoitems/by-priority/High");
+        highItems.Should().Contain(t => t.Name == "high-prio");
+        highItems.Should().NotContain(t => t.Name == "low-prio");
+
+        var lowItems = await _client.GetFromJsonAsync<List<TodoItemDto>>("/todoitems/by-priority/Low");
+        lowItems.Should().Contain(t => t.Name == "low-prio");
+        lowItems.Should().NotContain(t => t.Name == "high-prio");
+    }
+
+    [Fact]
+    public async Task Get_by_invalid_priority_returns_400()
+    {
+        var resp = await _client.GetAsync("/todoitems/by-priority/Urgent");
+        resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
 }

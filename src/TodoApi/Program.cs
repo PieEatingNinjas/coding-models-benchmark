@@ -22,6 +22,9 @@ todos.MapGet("/", async (TodoDb db) =>
 todos.MapGet("/complete", async (TodoDb db) =>
     await db.Todos.Where(t => t.IsComplete).Select(t => t.ToDto()).ToListAsync());
 
+todos.MapGet("/by-priority/{priority}", async (Priority priority, TodoDb db) =>
+    await db.Todos.Where(t => t.Priority == priority).Select(t => t.ToDto()).ToListAsync());
+
 todos.MapGet("/{id:int}", async (int id, TodoDb db) =>
     await db.Todos.FindAsync(id) is { } todo
         ? Results.Ok(todo.ToDto())
@@ -29,7 +32,7 @@ todos.MapGet("/{id:int}", async (int id, TodoDb db) =>
 
 todos.MapPost("/", async (TodoItemDto dto, TodoDb db) =>
 {
-    var todo = new TodoItem { Name = dto.Name, IsComplete = dto.IsComplete };
+    var todo = new TodoItem { Name = dto.Name, IsComplete = dto.IsComplete, Priority = dto.Priority };
     db.Todos.Add(todo);
     await db.SaveChangesAsync();
     return Results.Created($"/todoitems/{todo.Id}", todo.ToDto());
@@ -42,6 +45,7 @@ todos.MapPut("/{id:int}", async (int id, TodoItemDto dto, TodoDb db) =>
 
     todo.Name = dto.Name;
     todo.IsComplete = dto.IsComplete;
+    todo.Priority = dto.Priority;
     await db.SaveChangesAsync();
     return Results.NoContent();
 });
