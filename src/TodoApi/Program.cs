@@ -16,8 +16,16 @@ if (app.Environment.IsDevelopment())
 
 var todos = app.MapGroup("/todoitems");
 
-todos.MapGet("/", async (TodoDb db) =>
-    await db.Todos.Select(t => t.ToDto()).ToListAsync());
+todos.MapGet("/", async (string? tag, TodoDb db) =>
+{
+    var todos = await db.Todos.ToListAsync();
+    var query = todos.AsEnumerable();
+    if (!string.IsNullOrWhiteSpace(tag))
+    {
+        query = query.Where(t => t.Tags.Contains(tag, StringComparer.OrdinalIgnoreCase));
+    }
+    return query.Select(t => t.ToDto()).ToList();
+});
 
 todos.MapGet("/complete", async (TodoDb db) =>
     await db.Todos.Where(t => t.IsComplete).Select(t => t.ToDto()).ToListAsync());
@@ -46,7 +54,8 @@ todos.MapPost("/", async (TodoItemDto dto, TodoDb db) =>
         return Results.Problem("Due date cannot be in the past.", statusCode: 400);
     }
 
-    var todo = new TodoItem { Name = dto.Name, IsComplete = dto.IsComplete, Priority = dto.Priority, DueDate = dto.DueDate };
+    var tags = dto.Tags?.Distinct(StringComparer.OrdinalIgnoreCase).ToList() ?? [];
+    var todo = new TodoItem { Name = dto.Name, IsComplete = dto.IsComplete, Priority = dto.Priority, DueDate = dto.DueDate, Tags = tags };
     db.Todos.Add(todo);
     await db.SaveChangesAsync();
     return Results.Created($"/todoitems/{todo.Id}", todo.ToDto());
@@ -66,6 +75,7 @@ todos.MapPut("/{id:int}", async (int id, TodoItemDto dto, TodoDb db) =>
     todo.IsComplete = dto.IsComplete;
     todo.Priority = dto.Priority;
     todo.DueDate = dto.DueDate;
+    todo.Tags = dto.Tags?.Distinct(StringComparer.OrdinalIgnoreCase).ToList() ?? [];
     await db.SaveChangesAsync();
     return Results.NoContent();
 });

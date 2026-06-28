@@ -28,7 +28,7 @@ this file together with that feature's checkpoint. Capture *how* it got to green
 ## F3 — tags
 - **Result:**
 - **Intervention:**
-- **Notes:**
+- **Notes:** 69.8 credits
 
 ## F4 — validation & pagination
 - **Result:**

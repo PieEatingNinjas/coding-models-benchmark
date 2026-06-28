@@ -18,16 +18,18 @@ summary: TodoItem entity, TodoItemDto, and the mapping/Secret rule.
 | `IsComplete` | `bool` | done yes/no |
 | `Priority` | `Priority` | `Low`/`Medium`/`High` (default: `Medium`) |
 | `DueDate` | `DateTimeOffset?` | optional deadline |
+| `Tags` | `List<string>` | textual tags, default `[]` |
 | `Secret` | `string?` | **internal; must never go out via the API** |
 
 ## TodoItemDto (contract — `TodoItemDto.cs`)
-Contains only `Id`, `Name`, `IsComplete`, `Priority`, and `DueDate`. Has **no** `Secret` property — a compile-time guarantee that the field cannot leak.
+Contains only `Id`, `Name`, `IsComplete`, `Priority`, `DueDate`, and `Tags`. Has **no** `Secret` property — a compile-time guarantee that the field cannot leak.
 
 ## Mapping
-`TodoMapper.ToDto(this TodoItem)` projects entity → DTO. All endpoints use this mapping; they never return the entity directly.
+`TodoMapper.ToDto(this TodoItem)` projects entity → DTO. All endpoints use this mapping; they never return the entity directly. Absent tags (`null` on entity) map to an empty collection.
 
 ## Persistence
 `TodoDb : DbContext` with `DbSet<TodoItem> Todos`, registered with the InMemory provider (`UseInMemoryDatabase("TodoList")`). Integration tests replace this with a uniquely named InMemory store per test class.
+**Tags Persistence:** Tags are stored as a primitive collection (`List<string>`) supported natively by EF Core. In endpoints, duplicates are removed case-insensitively.
 
 ## Invariants
 - A DTO never contains sensitive fields.

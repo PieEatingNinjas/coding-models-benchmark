@@ -166,4 +166,39 @@ public class TodoEndpointsTests(TodoApiFactory factory) : IClassFixture<TodoApiF
         overdue.Should().NotContain(t => t.Name == "completed-past");
         overdue.Should().NotContain(t => t.Name == "incomplete-future");
     }
+
+    [Fact]
+    public async Task Filter_by_tag_works_case_insensitively_and_excludes_non_matches()
+    {
+        // Integration: POST with tags ["work","urgent"] -> findable via ?tag=work and ?tag=WORK.
+        // Integration: a todo without the requested tag does not appear in the filtered result.
+
+        await _client.PostAsJsonAsync("/todoitems",
+            new TodoItemDto { Name = "tagged-1", Tags = ["work", "urgent"] });
+        await _client.PostAsJsonAsync("/todoitems",
+            new TodoItemDto { Name = "tagged-2", Tags = ["home"] });
+
+        var match1 = await _client.GetFromJsonAsync<List<TodoItemDto>>("/todoitems?tag=work");
+        match1.Should().Contain(t => t.Name == "tagged-1");
+        match1.Should().NotContain(t => t.Name == "tagged-2");
+
+        var match2 = await _client.GetFromJsonAsync<List<TodoItemDto>>("/todoitems?tag=WORK");
+        match2.Should().Contain(t => t.Name == "tagged-1");
+        match2.Should().NotContain(t => t.Name == "tagged-2");
+    }
+
+    [Fact]
+    public async Task Get_without_tag_parameter_returns_all_todos()
+    {
+        await _client.PostAsJsonAsync("/todoitems",
+            new TodoItemDto { Name = "all-1", Tags = ["t1"] });
+        await _client.PostAsJsonAsync("/todoitems",
+            new TodoItemDto { Name = "all-2", Tags = ["t2"] });
+
+        var all = await _client.GetFromJsonAsync<List<TodoItemDto>>("/todoitems");
+
+        all.Should().NotBeNull();
+        all!.Should().Contain(t => t.Name == "all-1");
+        all.Should().Contain(t => t.Name == "all-2");
+    }
 }
