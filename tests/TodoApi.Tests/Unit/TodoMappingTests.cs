@@ -1,5 +1,7 @@
 using FluentAssertions;
-using TodoApi.Models;
+using TodoApi.Application.DTOs;
+using TodoApi.Domain.Entities;
+using TodoApi.Domain.Enums;
 using TodoApi.Tests.Support;
 using Xunit;
 

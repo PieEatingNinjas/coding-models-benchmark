@@ -1,5 +1,7 @@
 using Bogus;
-using TodoApi.Models;
+using TodoApi.Application.DTOs;
+using TodoApi.Domain.Entities;
+using TodoApi.Domain.Enums;
 
 namespace TodoApi.Tests.Support;
 

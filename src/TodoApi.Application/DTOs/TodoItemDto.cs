@@ -1,4 +1,7 @@
-namespace TodoApi.Models;
+using TodoApi.Domain.Entities;
+using TodoApi.Domain.Enums;
+
+namespace TodoApi.Application.DTOs;
 
 /// <summary>Public shape of a todo. Deliberately omits <c>Secret</c>.</summary>
 public class TodoItemDto

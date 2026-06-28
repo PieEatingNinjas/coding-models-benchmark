@@ -1,10 +1,15 @@
-using Microsoft.EntityFrameworkCore;
-using TodoApi.Data;
-using TodoApi.Models;
+using Microsoft.AspNetCore.Mvc;
+using TodoApi.Application;
+using TodoApi.Application.DTOs;
+using TodoApi.Application.Interfaces;
+using TodoApi.Domain.Enums;
+using TodoApi.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDbContext<TodoDb>(opt => opt.UseInMemoryDatabase("TodoList"));
+builder.Services.AddApplication();
+builder.Services.AddInfrastructure();
+
 builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi();
 
@@ -17,49 +22,28 @@ if (app.Environment.IsDevelopment())
 
 var todos = app.MapGroup("/todoitems");
 
-todos.MapGet("/", async (TodoDb db, HttpResponse response, string? tag = null, int page = 1, int pageSize = 20) =>
+todos.MapGet("/", async (ITodoService service, HttpResponse response, string? tag = null, int page = 1, int pageSize = 20) =>
 {
-    page = Math.Max(1, page);
-    pageSize = Math.Clamp(pageSize, 1, 100);
-
-    var todos = await db.Todos.ToListAsync();
-    var query = todos.AsEnumerable();
-    if (!string.IsNullOrWhiteSpace(tag))
-    {
-        query = query.Where(t => t.Tags.Contains(tag, StringComparer.OrdinalIgnoreCase));
-    }
-
-    var totalCount = query.Count();
+    var (items, totalCount) = await service.GetPaginatedAsync(tag, page, pageSize);
     response.Headers.Append("X-Total-Count", totalCount.ToString());
-
-    return query
-        .Skip((page - 1) * pageSize)
-        .Take(pageSize)
-        .Select(t => t.ToDto())
-        .ToList();
+    return items.ToList();
 });
 
-todos.MapGet("/complete", async (TodoDb db) =>
-    await db.Todos.Where(t => t.IsComplete).Select(t => t.ToDto()).ToListAsync());
+todos.MapGet("/complete", async (ITodoService service) =>
+    await service.GetCompleteAsync());
 
-todos.MapGet("/by-priority/{priority}", async (Priority priority, TodoDb db) =>
-    await db.Todos.Where(t => t.Priority == priority).Select(t => t.ToDto()).ToListAsync());
+todos.MapGet("/by-priority/{priority}", async (Priority priority, ITodoService service) =>
+    await service.GetByPriorityAsync(priority));
 
-todos.MapGet("/overdue", async (TodoDb db) =>
-{
-    var now = DateTimeOffset.UtcNow;
-    return await db.Todos
-        .Where(t => !t.IsComplete && t.DueDate.HasValue && t.DueDate < now)
-        .Select(t => t.ToDto())
-        .ToListAsync();
-});
+todos.MapGet("/overdue", async (ITodoService service) =>
+    await service.GetOverdueAsync());
 
-todos.MapGet("/{id:int}", async (int id, TodoDb db) =>
-    await db.Todos.FindAsync(id) is { } todo
-        ? Results.Ok(todo.ToDto())
+todos.MapGet("/{id:int}", async (int id, ITodoService service) =>
+    await service.GetByIdAsync(id) is { } dto
+        ? Results.Ok(dto)
         : Results.NotFound());
 
-todos.MapPost("/", async (TodoItemDto dto, TodoDb db) =>
+todos.MapPost("/", async (TodoItemDto dto, ITodoService service) =>
 {
     if (string.IsNullOrWhiteSpace(dto.Name))
     {
@@ -74,14 +58,11 @@ todos.MapPost("/", async (TodoItemDto dto, TodoDb db) =>
         return Results.Problem("Due date cannot be in the past.", statusCode: 400);
     }
 
-    var tags = dto.Tags?.Distinct(StringComparer.OrdinalIgnoreCase).ToList() ?? [];
-    var todo = new TodoItem { Name = dto.Name, IsComplete = dto.IsComplete, Priority = dto.Priority, DueDate = dto.DueDate, Tags = tags };
-    db.Todos.Add(todo);
-    await db.SaveChangesAsync();
-    return Results.Created($"/todoitems/{todo.Id}", todo.ToDto());
+    var created = await service.CreateAsync(dto);
+    return Results.Created($"/todoitems/{created.Id}", created);
 });
 
-todos.MapPut("/{id:int}", async (int id, TodoItemDto dto, TodoDb db) =>
+todos.MapPut("/{id:int}", async (int id, TodoItemDto dto, ITodoService service) =>
 {
     if (string.IsNullOrWhiteSpace(dto.Name))
     {
@@ -96,30 +77,18 @@ todos.MapPut("/{id:int}", async (int id, TodoItemDto dto, TodoDb db) =>
         return Results.Problem("Due date cannot be in the past.", statusCode: 400);
     }
 
-    var todo = await db.Todos.FindAsync(id);
-    if (todo is null) return Results.NotFound();
-
-    todo.Name = dto.Name;
-    todo.IsComplete = dto.IsComplete;
-    todo.Priority = dto.Priority;
-    todo.DueDate = dto.DueDate;
-    todo.Tags = dto.Tags?.Distinct(StringComparer.OrdinalIgnoreCase).ToList() ?? [];
-    await db.SaveChangesAsync();
-    return Results.NoContent();
+    var success = await service.UpdateAsync(id, dto);
+    return success ? Results.NoContent() : Results.NotFound();
 });
 
-todos.MapDelete("/{id:int}", async (int id, TodoDb db) =>
+todos.MapDelete("/{id:int}", async (int id, ITodoService service) =>
 {
-    if (await db.Todos.FindAsync(id) is { } todo)
-    {
-        db.Todos.Remove(todo);
-        await db.SaveChangesAsync();
-        return Results.NoContent();
-    }
-    return Results.NotFound();
+    var success = await service.DeleteAsync(id);
+    return success ? Results.NoContent() : Results.NotFound();
 });
 
 app.Run();
 
 // Exposed so the integration tests can use WebApplicationFactory<Program>.
 public partial class Program { }
+

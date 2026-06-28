@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace TodoApi.Models;
+namespace TodoApi.Domain.Enums;
 
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum Priority

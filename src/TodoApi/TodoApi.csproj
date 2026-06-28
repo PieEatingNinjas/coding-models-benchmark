@@ -3,8 +3,12 @@
   <!-- Common settings (TFM, nullable, implicit usings, warnings-as-errors) live in Directory.Build.props -->
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TodoApi.Application\TodoApi.Application.csproj" />
+    <ProjectReference Include="..\TodoApi.Infrastructure\TodoApi.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

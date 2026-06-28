@@ -38,7 +38,7 @@ this file together with that feature's checkpoint. Capture *how* it got to green
 ## F5 — clean architecture
 - **Result:**
 - **Intervention:**
-- **Notes:**
+- **Notes:** 103 credits
 
 ---
 
@@ -46,4 +46,8 @@ this file together with that feature's checkpoint. Capture *how* it got to green
 - **Reached:** _(F5 completed / faltered at Fx)_
 - **Interventions needed:**
 - **Quality drift:**
-- **Impression:** _(strong / ok / weak — why)_
+- **Impression:** cleanest layering so far. No EF leak in API (AddApplication+AddInfrastructure),
+namespaces match layers, DTO in Application, separate Application.Tests project with Moq.
+Minuses: pagination still loads-all-then-pages in memory (but repo interface IS paging-aware, so fixable
+without redesign); validation duplicated in endpoints (vs Codex's service-side results); leftover UnitTest1.cs.
+Impression: strong — ties Codex on structure, slightly behind on thin-endpoints + scalable querying.

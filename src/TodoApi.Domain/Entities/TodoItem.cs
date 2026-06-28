@@ -1,8 +1,10 @@
-namespace TodoApi.Models;
+using TodoApi.Domain.Enums;
+
+namespace TodoApi.Domain.Entities;
 
 /// <summary>
 /// Persistence entity for a todo. <see cref="Secret"/> is sensitive and must never
-/// be exposed through the API — endpoints return <see cref="TodoItemDto"/> instead.
+/// be exposed through the API — endpoints return DTOs instead.
 /// </summary>
 public class TodoItem
 {

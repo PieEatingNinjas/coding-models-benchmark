@@ -2,7 +2,9 @@ using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
-using TodoApi.Models;
+using TodoApi.Application.DTOs;
+using TodoApi.Domain.Entities;
+using TodoApi.Domain.Enums;
 using TodoApi.Tests.Support;
 using Xunit;
 
@@ -148,7 +150,7 @@ public class TodoEndpointsTests(TodoApiFactory factory) : IClassFixture<TodoApiF
 
         // We bypass the API validation to insert past due dates
         using var scope = factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<TodoApi.Data.TodoDb>();
+        var db = scope.ServiceProvider.GetRequiredService<TodoApi.Infrastructure.Data.TodoDb>();
 
         db.Todos.AddRange(
             new TodoItem { Name = "no-due-date" },
@@ -192,7 +194,7 @@ public class TodoEndpointsTests(TodoApiFactory factory) : IClassFixture<TodoApiF
     {
         // Clear DB so the inserted items appear on the first page of pagination
         using var scope = factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<TodoApi.Data.TodoDb>();
+        var db = scope.ServiceProvider.GetRequiredService<TodoApi.Infrastructure.Data.TodoDb>();
         db.Todos.RemoveRange(db.Todos);
         await db.SaveChangesAsync();
 

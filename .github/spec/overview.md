@@ -15,9 +15,10 @@ A minimal, correct todo API that serves as a **fixed, simple baseline** for comp
 
 ## Scope (baseline)
 - CRUD over todo items via a Minimal Web API.
+- Clean Architecture (Domain, Application, Infrastructure, API layers).
 - Persistence via EF Core InMemory (no real database needed).
 - Strict separation between entity (`TodoItem`) and public contract (`TodoItemDto`).
-- Unit and integration tests (xUnit, Bogus, FluentAssertions).
+- Unit and integration tests (xUnit, Bogus, FluentAssertions, Moq).
 
 ## Non-goals (baseline)
 - No authentication/authorization.
