@@ -23,7 +23,7 @@ this file together with that feature's checkpoint. Capture *how* it got to green
 ## F2 — due dates
 - **Result:**
 - **Intervention:**
-- **Notes:**
+- **Notes:** 48.4 credits
 
 ## F3 — tags
 - **Result:**

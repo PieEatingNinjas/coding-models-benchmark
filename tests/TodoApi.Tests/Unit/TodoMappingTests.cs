@@ -18,6 +18,7 @@ public class TodoMappingTests
         dto.Name.Should().Be(item.Name);
         dto.IsComplete.Should().Be(item.IsComplete);
         dto.Priority.Should().Be(item.Priority);
+        dto.DueDate.Should().Be(item.DueDate);
     }
 
     [Fact]

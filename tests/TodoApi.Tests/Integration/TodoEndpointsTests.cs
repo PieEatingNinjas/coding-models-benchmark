@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 using TodoApi.Models;
 using TodoApi.Tests.Support;
 using Xunit;
@@ -107,5 +108,62 @@ public class TodoEndpointsTests(TodoApiFactory factory) : IClassFixture<TodoApiF
     {
         var resp = await _client.GetAsync("/todoitems/by-priority/Urgent");
         resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task Post_with_past_due_date_returns_400_ProblemDetails()
+    {
+        var dto = new TodoItemDto
+        {
+            Name = "past-due",
+            DueDate = DateTimeOffset.UtcNow.AddDays(-1)
+        };
+
+        var post = await _client.PostAsJsonAsync("/todoitems", dto);
+        post.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var problem = await post.Content.ReadFromJsonAsync<Microsoft.AspNetCore.Mvc.ProblemDetails>();
+        problem.Should().NotBeNull();
+        problem!.Title.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task Put_with_past_due_date_returns_400()
+    {
+        var post = await _client.PostAsJsonAsync("/todoitems",
+            new TodoItemDto { Name = "valid-due-date", DueDate = DateTimeOffset.UtcNow.AddDays(1) });
+        var created = await post.Content.ReadFromJsonAsync<TodoItemDto>();
+
+        var put = await _client.PutAsJsonAsync($"/todoitems/{created!.Id}",
+            new TodoItemDto { Name = "invalid-due-date", DueDate = DateTimeOffset.UtcNow.AddDays(-1) });
+
+        put.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task Overdue_filter_works_correctly()
+    {
+        var past = DateTimeOffset.UtcNow.AddDays(-1);
+        var future = DateTimeOffset.UtcNow.AddDays(1);
+
+        // We bypass the API validation to insert past due dates
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<TodoApi.Data.TodoDb>();
+
+        db.Todos.AddRange(
+            new TodoItem { Name = "no-due-date" },
+            new TodoItem { Name = "completed-past", IsComplete = true, DueDate = past },
+            new TodoItem { Name = "incomplete-future", DueDate = future },
+            new TodoItem { Name = "incomplete-past", DueDate = past }
+        );
+        await db.SaveChangesAsync();
+
+        var overdue = await _client.GetFromJsonAsync<List<TodoItemDto>>("/todoitems/overdue");
+
+        overdue.Should().NotBeNull();
+        overdue!.Should().Contain(t => t.Name == "incomplete-past");
+        overdue.Should().NotContain(t => t.Name == "no-due-date");
+        overdue.Should().NotContain(t => t.Name == "completed-past");
+        overdue.Should().NotContain(t => t.Name == "incomplete-future");
     }
 }

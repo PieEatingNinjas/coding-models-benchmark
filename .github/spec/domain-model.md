@@ -17,10 +17,11 @@ summary: TodoItem entity, TodoItemDto, and the mapping/Secret rule.
 | `Name` | `string?` | task title |
 | `IsComplete` | `bool` | done yes/no |
 | `Priority` | `Priority` | `Low`/`Medium`/`High` (default: `Medium`) |
+| `DueDate` | `DateTimeOffset?` | optional deadline |
 | `Secret` | `string?` | **internal; must never go out via the API** |
 
 ## TodoItemDto (contract — `TodoItemDto.cs`)
-Contains only `Id`, `Name`, `IsComplete`, and `Priority`. Has **no** `Secret` property — a compile-time guarantee that the field cannot leak.
+Contains only `Id`, `Name`, `IsComplete`, `Priority`, and `DueDate`. Has **no** `Secret` property — a compile-time guarantee that the field cannot leak.
 
 ## Mapping
 `TodoMapper.ToDto(this TodoItem)` projects entity → DTO. All endpoints use this mapping; they never return the entity directly.
