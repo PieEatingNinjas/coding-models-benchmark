@@ -3,7 +3,7 @@ title: "Feature F4 — Validation, ProblemDetails & pagination"
 category: feature-plan
 priority: 4
 tags: [validation, problemdetails, pagination]
-status: ready
+status: implemented
 planner_model: "Claude Opus 4.8"
 related_docs: [../domain-model.md, ../api-contracts.md]
 summary: A more robust API with input validation, standardized error responses, and pagination on the list.

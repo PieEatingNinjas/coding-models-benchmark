@@ -190,6 +190,12 @@ public class TodoEndpointsTests(TodoApiFactory factory) : IClassFixture<TodoApiF
     [Fact]
     public async Task Get_without_tag_parameter_returns_all_todos()
     {
+        // Clear DB so the inserted items appear on the first page of pagination
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<TodoApi.Data.TodoDb>();
+        db.Todos.RemoveRange(db.Todos);
+        await db.SaveChangesAsync();
+
         await _client.PostAsJsonAsync("/todoitems",
             new TodoItemDto { Name = "all-1", Tags = ["t1"] });
         await _client.PostAsJsonAsync("/todoitems",
@@ -200,5 +206,83 @@ public class TodoEndpointsTests(TodoApiFactory factory) : IClassFixture<TodoApiF
         all.Should().NotBeNull();
         all!.Should().Contain(t => t.Name == "all-1");
         all.Should().Contain(t => t.Name == "all-2");
+    }
+
+    [Fact]
+    public async Task Post_without_name_returns_400_ProblemDetails()
+    {
+        var dto = new TodoItemDto { IsComplete = false };
+        var post = await _client.PostAsJsonAsync("/todoitems", dto);
+        post.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var problem = await post.Content.ReadFromJsonAsync<Microsoft.AspNetCore.Mvc.ProblemDetails>();
+        problem.Should().NotBeNull();
+        problem!.Title.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task Post_with_name_too_long_returns_400_ProblemDetails()
+    {
+        var dto = new TodoItemDto { Name = new string('A', 201) };
+        var post = await _client.PostAsJsonAsync("/todoitems", dto);
+        post.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var problem = await post.Content.ReadFromJsonAsync<Microsoft.AspNetCore.Mvc.ProblemDetails>();
+        problem.Should().NotBeNull();
+        problem!.Title.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task Pagination_returns_correct_pages_and_total_count()
+    {
+        // Insert 25 items with a specific tag to isolate from other tests
+        var tag = "page-test";
+        for (int i = 0; i < 25; i++)
+        {
+            await _client.PostAsJsonAsync("/todoitems", new TodoItemDto { Name = $"page-item-{i}", Tags = [tag] });
+        }
+
+        var page1 = await _client.GetAsync($"/todoitems?tag={tag}&page=1&pageSize=20");
+        page1.StatusCode.Should().Be(HttpStatusCode.OK);
+        page1.Headers.Contains("X-Total-Count").Should().BeTrue();
+
+        var items1 = await page1.Content.ReadFromJsonAsync<List<TodoItemDto>>();
+        items1.Should().HaveCount(20);
+
+        var page2 = await _client.GetAsync($"/todoitems?tag={tag}&page=2&pageSize=20");
+        page2.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var items2 = await page2.Content.ReadFromJsonAsync<List<TodoItemDto>>();
+        items2.Should().HaveCount(5);
+    }
+
+    [Fact]
+    public async Task Pagination_clamps_pageSize_to_100()
+    {
+        var tag = "clamp-test";
+        for (int i = 0; i < 105; i++)
+        {
+            await _client.PostAsJsonAsync("/todoitems", new TodoItemDto { Name = $"clamp-item-{i}", Tags = [tag] });
+        }
+
+        var response = await _client.GetAsync($"/todoitems?tag={tag}&pageSize=150");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var items = await response.Content.ReadFromJsonAsync<List<TodoItemDto>>();
+        items.Should().HaveCount(100);
+    }
+
+    [Fact]
+    public async Task Pagination_defaults_apply_without_parameters()
+    {
+        var tag = "defaults-test";
+        for (int i = 0; i < 25; i++)
+        {
+            await _client.PostAsJsonAsync("/todoitems", new TodoItemDto { Name = $"default-item-{i}", Tags = [tag] });
+        }
+
+        var response = await _client.GetAsync($"/todoitems?tag={tag}");
+        var items = await response.Content.ReadFromJsonAsync<List<TodoItemDto>>();
+        items.Should().HaveCount(20);
     }
 }

@@ -35,7 +35,7 @@ Pre-written, spec-level plans per feature in `features/` — input for the model
 | F1 | `features/F1-priority.md` | 1 | Priority + filter (Implemented) |
 | F2 | `features/F2-due-dates.md` | 2 | Due dates + overdue + validation (Implemented) |
 | F3 | `features/F3-tags.md` | 3 | Tags + filtering (Implemented) |
-| F4 | `features/F4-validation-pagination.md` | 4 | Validation, ProblemDetails, pagination |
+| F4 | `features/F4-validation-pagination.md` | 4 | Validation, ProblemDetails, pagination (Implemented) |
 | F5 | `features/F5-clean-architecture.md` | 5 | Refactor to Clean Architecture |
 
 ## Open bugs / attention points

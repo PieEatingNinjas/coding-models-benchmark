@@ -33,7 +33,7 @@ this file together with that feature's checkpoint. Capture *how* it got to green
 ## F4 — validation & pagination
 - **Result:**
 - **Intervention:**
-- **Notes:**
+- **Notes:** 83.4 credits
 
 ## F5 — clean architecture
 - **Result:**

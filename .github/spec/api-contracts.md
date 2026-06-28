@@ -14,13 +14,13 @@ Base route: `/todoitems`. All request/response bodies use `TodoItemDto` (JSON).
 
 | Method | Route | Body | Success | Error |
 |--------|-------|------|---------|-------|
-| GET | `/todoitems` | — | `200` list of DTOs (filtered if `?tag=` is present) | — |
+| GET | `/todoitems` | — | `200` list of DTOs (filtered if `?tag=` is present, paginated, with `X-Total-Count` header) | — |
 | GET | `/todoitems/complete` | — | `200` completed DTOs only | — |
 | GET | `/todoitems/overdue` | — | `200` overdue DTOs | — |
 | GET | `/todoitems/by-priority/{priority}` | — | `200` filtered DTOs | `400` invalid priority |
 | GET | `/todoitems/{id:int}` | — | `200` DTO | `404` |
-| POST | `/todoitems` | DTO (without Id, optionally with Tags) | `201` + `Location` + DTO | `400` past due date |
-| PUT | `/todoitems/{id:int}` | DTO | `204` | `400` past due date, `404` not found |
+| POST | `/todoitems` | DTO (without Id, optionally with Tags) | `201` + `Location` + DTO | `400` validation errors (ProblemDetails) |
+| PUT | `/todoitems/{id:int}` | DTO | `204` | `400` validation errors (ProblemDetails), `404` not found |
 | DELETE | `/todoitems/{id:int}` | — | `204` | `404` |
 
 ## Rules
@@ -29,9 +29,10 @@ Base route: `/todoitems`. All request/response bodies use `TodoItemDto` (JSON).
 - Responses never contain `Secret`.
 - `404` for an unknown `{id}` on GET/PUT/DELETE.
 - `Priority` is serialized as a string (`Low`, `Medium`, `High`); an unknown priority filter returns `400`.
-- POST/PUT return `400` (ProblemDetails) when the `DueDate` is in the past.
+- POST/PUT return `400` (ProblemDetails) when the `DueDate` is in the past, or if `Name` is missing, empty, or exceeds 200 characters.
 - "Overdue" filter only includes incomplete items with a `DueDate` that is in the past.
 - `GET /todoitems` filters by tag case-insensitively if `?tag=<x>` is given.
+- `GET /todoitems` supports pagination via `?page=` (default 1) and `?pageSize=` (default 20). Invalid values are clamped (page >= 1, pageSize between 1 and 100). The total number of items matching the query is returned in the `X-Total-Count` response header.
 - Duplicate tags supplied to POST/PUT are deduplicated case-insensitively.
 
 > New endpoints from benchmark features are documented here before implementation.

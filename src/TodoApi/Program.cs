@@ -5,6 +5,7 @@ using TodoApi.Models;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<TodoDb>(opt => opt.UseInMemoryDatabase("TodoList"));
+builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
@@ -16,15 +17,26 @@ if (app.Environment.IsDevelopment())
 
 var todos = app.MapGroup("/todoitems");
 
-todos.MapGet("/", async (string? tag, TodoDb db) =>
+todos.MapGet("/", async (TodoDb db, HttpResponse response, string? tag = null, int page = 1, int pageSize = 20) =>
 {
+    page = Math.Max(1, page);
+    pageSize = Math.Clamp(pageSize, 1, 100);
+
     var todos = await db.Todos.ToListAsync();
     var query = todos.AsEnumerable();
     if (!string.IsNullOrWhiteSpace(tag))
     {
         query = query.Where(t => t.Tags.Contains(tag, StringComparer.OrdinalIgnoreCase));
     }
-    return query.Select(t => t.ToDto()).ToList();
+
+    var totalCount = query.Count();
+    response.Headers.Append("X-Total-Count", totalCount.ToString());
+
+    return query
+        .Skip((page - 1) * pageSize)
+        .Take(pageSize)
+        .Select(t => t.ToDto())
+        .ToList();
 });
 
 todos.MapGet("/complete", async (TodoDb db) =>
@@ -49,6 +61,14 @@ todos.MapGet("/{id:int}", async (int id, TodoDb db) =>
 
 todos.MapPost("/", async (TodoItemDto dto, TodoDb db) =>
 {
+    if (string.IsNullOrWhiteSpace(dto.Name))
+    {
+        return Results.ValidationProblem(new Dictionary<string, string[]> { { "Name", ["Name is required."] } });
+    }
+    if (dto.Name.Length > 200)
+    {
+        return Results.ValidationProblem(new Dictionary<string, string[]> { { "Name", ["Name cannot exceed 200 characters."] } });
+    }
     if (dto.DueDate.HasValue && dto.DueDate.Value < DateTimeOffset.UtcNow)
     {
         return Results.Problem("Due date cannot be in the past.", statusCode: 400);
@@ -63,6 +83,14 @@ todos.MapPost("/", async (TodoItemDto dto, TodoDb db) =>
 
 todos.MapPut("/{id:int}", async (int id, TodoItemDto dto, TodoDb db) =>
 {
+    if (string.IsNullOrWhiteSpace(dto.Name))
+    {
+        return Results.ValidationProblem(new Dictionary<string, string[]> { { "Name", ["Name is required."] } });
+    }
+    if (dto.Name.Length > 200)
+    {
+        return Results.ValidationProblem(new Dictionary<string, string[]> { { "Name", ["Name cannot exceed 200 characters."] } });
+    }
     if (dto.DueDate.HasValue && dto.DueDate.Value < DateTimeOffset.UtcNow)
     {
         return Results.Problem("Due date cannot be in the past.", statusCode: 400);
