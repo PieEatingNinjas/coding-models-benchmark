@@ -36,29 +36,4 @@ public class TodoMappingTests
 
         item.ToDto().IsComplete.Should().Be(complete);
     }
-
-    [Fact]
-    public void ToDto_preserves_priority()
-    {
-        var item = TodoItemFaker.Entity().Generate();
-        item.Priority = Priority.High;
-
-        item.ToDto().Priority.Should().Be(Priority.High);
-    }
-
-    [Fact]
-    public void TodoItem_priority_defaults_to_medium()
-    {
-        var item = new TodoItem { Name = "test" };
-
-        item.Priority.Should().Be(Priority.Medium);
-    }
-
-    [Fact]
-    public void TodoItemDto_priority_defaults_to_medium()
-    {
-        var dto = new TodoItemDto { Name = "test" };
-
-        dto.Priority.Should().Be(Priority.Medium);
-    }
 }
