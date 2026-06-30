@@ -80,13 +80,22 @@ Skills: security/code-scanning
 Done when: report exists with findings + remediation
 ```
 
+### Phase 3 — ArchitectureAgent (parallel with Security)
+```
+Task: Review the change against Clean Architecture + conventions + .NET best practices
+Read: git diff (merge-base) / src/, spec/INDEX.md + relevant specs, copilot-instructions.md
+Produce: reviews/architecture-review.md
+Skills: development/dotnet-patterns, development/code-checklist
+Done when: report exists with verdict + prioritized findings (problem/smell/nitpick)
+```
+
 ### Phase 4 — DeveloperAgent (fixes)
 ```
-Task: Fix CRITICAL & HIGH from the security report
-Read: security-reports/security-report.md
+Task: Fix security CRITICAL/HIGH + architecture problem-level findings
+Read: security-reports/security-report.md, reviews/architecture-review.md
 Produce: fixed files in src/
 Skills: development/code-checklist, build/build-validation
-Done when: all CRITICAL/HIGH fixed, build + test green
+Done when: all CRITICAL/HIGH + architecture problems fixed (or flagged), build + test green
 ```
 
 ## Error handling
