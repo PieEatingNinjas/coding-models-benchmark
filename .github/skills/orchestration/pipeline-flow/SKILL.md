@@ -17,8 +17,8 @@ Strictly phased with **gates**: each phase must pass its gate before the next st
 |---|-------|-----|--------|------|
 | 1 | Analysis & Specs | Orchestrator | `spec/*.md`, `spec/INDEX.md` | All specs exist + in INDEX |
 | 2 | Implementation + Tests | Developer ∥ Tester | `src/**`, `tests/**` | `dotnet build` + `dotnet test` green |
-| 3 | Security review | Security | `security-reports/security-report.md` | Report exists |
-| 4 | Remediation | Developer | fixed `src/**` | CRITICAL/HIGH fixed, build green |
+| 3 | Review | Security ∥ Architecture | `security-reports/security-report.md`, `reviews/architecture-review.md` | Both reports exist |
+| 4 | Remediation | Developer | fixed `src/**` | CRITICAL/HIGH + architecture problems fixed (or flagged), build green |
 | 5 | DevOps (optional) | DevOps | `.github/workflows/**`, IaC | Pipeline validates |
 | 6 | Final report | Orchestrator | `reports/pipeline-execution-report.md` | Report complete |
 
@@ -27,6 +27,7 @@ Strictly phased with **gates**: each phase must pass its gate before the next st
 - **No write conflicts:** Developer writes `src/`, Tester writes `tests/`.
 - **Shared input is immutable:** specs do not change during phase 2.
 - **Independent completion:** each agent's success is independent of the others.
+- **Reviewers run in parallel too:** Security writes `security-reports/`, Architecture writes `reviews/`; both only read `src/` and never write code.
 
 ## Gate discipline
 
