@@ -2,7 +2,7 @@
 name: OrchestratorAgent
 description: "Orchestrator — analyzes the task, writes/updates specs in spec/, dispatches DeveloperAgent, TesterAgent, SecurityAgent, ArchitectureAgent, and DevOpsAgent in a fixed order, guards the gates, and produces a final report. Writes no production code itself."
 # model: 
-tools: ['agent', 'edit', 'search', 'web/fetch', 'runCommands', 'runTasks']
+tools: ['agent', 'edit', 'search/codebase', 'search/usages', 'web/fetch', 'execute/runInTerminal', 'execute/getTerminalOutput', 'read/terminalLastCommand', 'read/terminalSelection', 'execute/createAndRunTask', 'execute/runTask', 'read/getTaskOutput']
 agents: ['DeveloperAgent', 'TesterAgent', 'SecurityAgent', 'ArchitectureAgent', 'DevOpsAgent']
 ---
 
