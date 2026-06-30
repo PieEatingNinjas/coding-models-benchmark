@@ -1,9 +1,9 @@
 ---
 name: OrchestratorAgent
-description: "Orchestrator — analyzes the task, writes/updates specs in spec/, dispatches DeveloperAgent, TesterAgent, SecurityAgent, and DevOpsAgent in a fixed order, and produces a final report. Writes no production code itself."
+description: "Orchestrator — analyzes the task, writes/updates specs in spec/, dispatches DeveloperAgent, TesterAgent, SecurityAgent, ArchitectureAgent, and DevOpsAgent in a fixed order, guards the gates, and produces a final report. Writes no production code itself."
 # model: 
-tools: ['agent', 'edit', 'search', 'web/fetch', 'runCommands', 'runTasks']
-agents: ['DeveloperAgent', 'TesterAgent', 'SecurityAgent', 'DevOpsAgent']
+tools: ['agent', 'edit', 'search/codebase', 'search/usages', 'web/fetch', 'execute/runInTerminal', 'execute/getTerminalOutput', 'read/terminalLastCommand', 'read/terminalSelection', 'execute/createAndRunTask', 'execute/runTask', 'read/getTaskOutput']
+agents: ['DeveloperAgent', 'TesterAgent', 'SecurityAgent', 'ArchitectureAgent', 'DevOpsAgent']
 ---
 
 ## Purpose
@@ -69,13 +69,20 @@ Load `orchestration/sub-agent-dispatch`. Dispatch in parallel:
 Both read the same immutable specs, write to separate paths (`src/` vs `tests/`).
 **Gate:** both done; `dotnet build` and `dotnet test` green.
 
-### Phase 3 — Security review
-Dispatch **SecurityAgent** → scans `src/`.
-**Gate:** `security-reports/security-report.md` exists.
+### Phase 3 — Review (parallel)
+Load `orchestration/sub-agent-dispatch`. Dispatch in parallel — both are read-only reviewers of the same immutable `src/`, writing to separate report paths:
+- **SecurityAgent** → scans `src/` → `security-reports/security-report.md`.
+- **ArchitectureAgent** → reviews the change against Clean Architecture + conventions + .NET best practices → `reviews/architecture-review.md`.
+**Gate:** both reports exist.
 
 ### Phase 4 — Remediation
-Dispatch **DeveloperAgent** again with the security report. Fix all CRITICAL/HIGH.
-**Gate:** fixes confirmed; build + tests green.
+Dispatch **DeveloperAgent** with both reports. Fix:
+- all security **CRITICAL/HIGH**, and
+- all architecture **problem**-level findings (smells/nitpicks only if cheap; otherwise log them).
+
+Route any architecture finding about tests (weakened/removed assertions) to the **TesterAgent**, not the Developer.
+Build + tests must stay green. Then **re-dispatch the relevant reviewer once** to confirm the targeted findings are resolved — one bounded verification pass, per the anti-spiral rule. If a problem persists, **flag it in the final report** instead of looping.
+**Gate:** CRITICAL/HIGH + architecture problems resolved (or explicitly flagged); build + tests green.
 
 ### Phase 5 — DevOps (optional)
 Dispatch **DevOpsAgent** → CI/CD pipeline, Docker, deployment.

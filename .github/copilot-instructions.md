@@ -40,6 +40,7 @@ Keep agents **small** — small personas with one sharp role.
 | **DeveloperAgent** | `agents/developer.agent.md` | Implements .NET code from specs. |
 | **TesterAgent** | `agents/tester.agent.md` | Writes xUnit/Bogus tests from specs. |
 | **SecurityAgent** | `agents/security.agent.md` | Scans for vulnerabilities. |
+| **ArchitectureAgent** | `agents/architecture.agent.md` | Reviews Clean Architecture & .NET best practices. Writes a review report; fixes nothing. |
 | **DevOpsAgent** | `agents/devops.agent.md` | CI/CD, Docker, Azure. |
 
 ## Skills
